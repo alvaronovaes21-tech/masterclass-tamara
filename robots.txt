@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://SEU-USUARIO.github.io/NOME-DO-REPOSITORIO/sitemap.xml
+Sitemap: https://alvaronovaes21-tech.github.io/masterclass-tamara/sitemap.xml
