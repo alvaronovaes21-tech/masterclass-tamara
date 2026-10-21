@@ -3,7 +3,11 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; img-src 'self' data:; base-uri 'none'; form-action 'none'; object-src 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://www.googletagmanager.com; style-src 'self'; img-src 'self' data: https://www.googletagmanager.com https://*.google.com https://*.g.doubleclick.net; connect-src https://*.googletagmanager.com https://*.google-analytics.com https://*.g.doubleclick.net https://*.google.com; frame-src https://td.doubleclick.net https://www.googletagmanager.com; base-uri 'none'; form-action 'none'; object-src 'none'">
+
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=AW-736166788"></script>
+  <script src="/assets/js/gtag-init.js"></script>
   <meta name="robots" content="noindex">
   <title>Página não encontrada</title>
   <link rel="icon" type="image/svg+xml" href="/assets/img/favicon.svg">

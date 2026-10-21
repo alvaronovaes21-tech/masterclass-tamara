@@ -5,7 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <!-- Segurança: só permite carregar recursos do próprio site (+ vídeo do YouTube em modo privacidade) -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data: https://i.ytimg.com; font-src 'self'; connect-src 'none'; frame-src https://www.youtube-nocookie.com; media-src 'none'; manifest-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; upgrade-insecure-requests">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://www.googletagmanager.com; style-src 'self'; img-src 'self' data: https://i.ytimg.com https://www.googletagmanager.com https://*.google.com https://*.g.doubleclick.net; font-src 'self'; connect-src https://*.googletagmanager.com https://*.google-analytics.com https://*.g.doubleclick.net https://*.google.com; frame-src https://www.youtube-nocookie.com https://td.doubleclick.net https://www.googletagmanager.com; media-src 'none'; manifest-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; upgrade-insecure-requests">
+
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=AW-736166788"></script>
+  <script src="assets/js/gtag-init.js"></script>
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <meta name="format-detection" content="telephone=no">
 
