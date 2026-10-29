@@ -262,7 +262,9 @@ export async function startServer({ port = 0, dataDir, files = new Map() } = {})
     if (file.endsWith('site-config.js') && server.configured !== false) {
       buf = Buffer.from(`window.SITE_CONFIG = { supabaseUrl: '${origin}', supabaseAnonKey: '${ANON_KEY}', turnstileSiteKey: '' };`);
     }
-    if (file.endsWith('site-config.js') && server.configured === false) { /* serve o arquivo original (vazio) */ }
+    if (file.endsWith('site-config.js') && server.configured === false) {   // simula o site "ainda não configurado" (o arquivo real agora tem a URL de produção)
+      buf = Buffer.from("window.SITE_CONFIG = { supabaseUrl: '', supabaseAnonKey: '', turnstileSiteKey: '' };");
+    }
     if (ext === '.html') { // CSP do teste: troca o domínio do Supabase pelo servidor local e remove o upgrade para https
       buf = Buffer.from(buf.toString('utf8').replaceAll('https://*.supabase.co', origin).replace('; upgrade-insecure-requests', ''));
     }

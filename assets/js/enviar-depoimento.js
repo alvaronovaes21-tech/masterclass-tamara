@@ -33,12 +33,13 @@
   var FIELD_LABEL = {
     author_name: 'Nome', display_choice: 'Identificação pública', custom_name: 'Identificação pública',
     profession: 'Profissão', cohort: 'Turma', contact: 'Contato', body: 'Depoimento',
+    course: 'Curso ou evento', course_detail: 'Curso ou evento',
     photo: 'Foto', photo_consent: 'Autorização da foto', consent_own: 'Confirmação do relato',
     consent_publication: 'Autorização de publicação', captcha: 'Verificação de segurança', consent_version: 'Página', geral: 'Envio'
   };
   var FOCUS_ID = {
     author_name: 'f-author_name', display_choice: null, custom_name: 'f-custom_name', profession: 'f-profession', cohort: 'f-cohort',
-    contact: 'f-contact', body: 'f-body', photo: 'btn-galeria', photo_consent: 'f-photo_consent', consent_own: 'f-consent_own',
+    contact: 'f-contact', course: 'course-first', course_detail: 'f-course_detail', body: 'f-body', photo: 'btn-galeria', photo_consent: 'f-photo_consent', consent_own: 'f-consent_own',
     consent_publication: 'f-consent_publication', captcha: null, consent_version: null, geral: null
   };
 
@@ -90,6 +91,32 @@
   }
   form.addEventListener('input', updatePreview);
   form.addEventListener('change', updatePreview);
+
+  // ---------- Curso ou evento ----------
+  // Mantenha os nomes iguais aos da Edge Function (validate.ts) e do painel.
+  var COURSE_NEEDS_DETAIL = { outro: true, varios: true };
+  function course() { var r = form.querySelector('input[name="course"]:checked'); return r ? r.value : ''; }
+  function updateCourse() {
+    var c = course(), wrap = $('course-detail-wrap'), input = $('f-course_detail');
+    var need = !!COURSE_NEEDS_DETAIL[c];
+    wrap.hidden = !need;
+    input.required = need;
+    if (!need) { input.value = ''; setError('course_detail', ''); return; }
+    var lab = $('course-detail-label').firstChild;
+    if (c === 'outro') {
+      lab.textContent = 'Qual curso ou evento? ';
+      input.maxLength = 120; input.placeholder = 'Nome do curso ou evento';
+      $('h-course_detail').textContent = 'O nome informado poderá ser exibido junto ao seu depoimento, se ele for aprovado.';
+    } else {
+      lab.textContent = 'Quais cursos ou eventos você deseja mencionar? ';
+      input.maxLength = 200; input.placeholder = 'Ex.: Weekend Pass e A.T. na Prática';
+      $('h-course_detail').textContent = 'Os nomes serão analisados pela administração. Se não forem publicados, o depoimento aparece como “Participante de múltiplas formações”.';
+    }
+  }
+  form.addEventListener('change', function (ev) {
+    if (ev.target && ev.target.name === 'course') { setError('course', ''); updateCourse(); }
+  });
+  updateCourse();
 
   // ---------- Contador ----------
   var body = $('f-body');
@@ -147,6 +174,14 @@
       if (c.length < 2) e.custom_name = 'Informe como deseja aparecer (mínimo de 2 caracteres).';
     }
     if (choice() && choice() !== 'custom' && publicName().length < 2) e.display_choice = 'Com essa opção o nome ficaria muito curto. Escolha outra.';
+    var cs = course();
+    if (!cs) e.course = 'Selecione o curso ou evento que você realizou.';
+    else if (COURSE_NEEDS_DETAIL[cs]) {
+      var cd = clean($('f-course_detail').value);
+      if (cd.length < 2) e.course_detail = cs === 'outro' ? 'Informe o nome do curso ou evento.' : 'Informe quais cursos ou eventos você deseja mencionar.';
+      else if (cd.length > (cs === 'outro' ? 120 : 200)) e.course_detail = 'Use no máximo ' + (cs === 'outro' ? 120 : 200) + ' caracteres.';
+      else if (LINK.test(cd)) e.course_detail = 'Esse campo não aceita links.';
+    }
     var txt = body.value.trim();
     if (txt.length < BODY_MIN) e.body = 'Escreva pelo menos ' + BODY_MIN + ' caracteres (você escreveu ' + txt.length + ').';
     else if (txt.length > BODY_MAX) e.body = 'O depoimento pode ter no máximo ' + BODY_MAX + ' caracteres.';
@@ -159,7 +194,7 @@
       if (!okMail && !okTel) e.contact = 'Informe um e-mail ou telefone válido, ou deixe em branco.';
     }
     if (photoBlob && !$('f-photo_consent').checked) e.photo_consent = 'Para enviar a foto, autorize o uso público da imagem, ou remova a foto.';
-    if (!$('f-consent_own').checked) e.consent_own = 'Confirme que o relato é sobre a sua própria experiência.';
+    if (!$('f-consent_own').checked) e.consent_own = 'Confirme que o depoimento relata uma experiência real que você teve em um curso, evento ou formação da Tâmara San’Galo.';
     if (!$('f-consent_publication').checked) e.consent_publication = 'Para enviar, é necessário autorizar a análise e a possível publicação do texto.';
     if (cfg.turnstileSiteKey && window.turnstile && turnstileId !== null && !window.turnstile.getResponse(turnstileId)) e.captcha = 'Confirme a verificação de segurança.';
     return e;
@@ -198,6 +233,8 @@
     fd.append('profession', clean($('f-profession').value));
     fd.append('cohort', clean($('f-cohort').value));
     fd.append('contact', clean($('f-contact').value));
+    fd.append('course', course());
+    fd.append('course_detail', COURSE_NEEDS_DETAIL[course()] ? clean($('f-course_detail').value) : '');
     fd.append('body', body.value.trim());
     fd.append('consent_own', $('f-consent_own').checked ? 'true' : 'false');
     fd.append('consent_publication', $('f-consent_publication').checked ? 'true' : 'false');

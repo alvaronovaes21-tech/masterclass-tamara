@@ -9,13 +9,13 @@
   <meta name="referrer" content="no-referrer">
   <meta name="robots" content="noindex, nofollow">
 
-  <title>Enviar depoimento | Masterclass Do Comportamento à Aprendizagem</title>
-  <meta name="description" content="Participou da Masterclass Do Comportamento à Aprendizagem? Conte como foi a sua experiência.">
+  <title>Enviar depoimento | Tâmara San'Galo Novaes</title>
+  <meta name="description" content="Participou de um curso, evento ou formação da Tâmara San'Galo? Conte como foi a sua experiência.">
   <meta name="theme-color" content="#0f1f3d">
   <meta property="og:type" content="website">
   <meta property="og:locale" content="pt_BR">
-  <meta property="og:title" content="Conte como foi a sua experiência na Masterclass">
-  <meta property="og:description" content="Participou da Masterclass Do Comportamento à Aprendizagem? Compartilhe o seu depoimento.">
+  <meta property="og:title" content="Conte como foi a sua experiência">
+  <meta property="og:description" content="Participou de um curso, evento ou formação da Tâmara San'Galo? Compartilhe o seu depoimento.">
 
   <link rel="icon" type="image/svg+xml" href="../assets/img/favicon.svg">
   <link rel="stylesheet" href="../assets/css/style.css">
@@ -45,9 +45,9 @@
     <div class="wrap wrap--form">
 
       <section id="intro" aria-labelledby="form-titulo">
-        <p class="eyebrow eyebrow--dark">Masterclass Do Comportamento à Aprendizagem</p>
+        <p class="eyebrow eyebrow--dark">Cursos e eventos da Tâmara San’Galo</p>
         <h1 id="form-titulo" tabindex="-1">Conte como foi a sua experiência</h1>
-        <p class="lead-dark">Você participou da Masterclass Do Comportamento à Aprendizagem? Conte como foi sua experiência! Seu relato pode ajudar outros profissionais e estudantes a conhecerem a proposta do curso.</p>
+        <p class="lead-dark">Você participou de algum curso, evento ou formação da Tâmara San’Galo? Conte como foi sua experiência! Seu relato pode ajudar outros profissionais e estudantes a conhecerem a proposta.</p>
 
         <div class="notice notice--info" role="note">
           <strong>Antes de enviar:</strong> o envio não garante a publicação. Todo depoimento passa por análise da administração e <strong>só é publicado se for aprovado</strong>. Enviar é opcional e você escolhe como quer ser identificado(a).
@@ -65,7 +65,7 @@
         <ul id="resumo-lista"></ul>
       </div>
 
-      <form id="form" data-consent-version="v1-2026-10" novalidate autocomplete="on">
+      <form id="form" data-consent-version="v2-2026-10" novalidate autocomplete="on">
 
         <fieldset class="group">
           <legend>1. Sobre você</legend>
@@ -114,6 +114,24 @@
 
         <fieldset class="group">
           <legend>2. Seu depoimento</legend>
+
+          <fieldset class="field field--radios" id="course-group" aria-describedby="e-course">
+            <legend>Qual curso ou evento você realizou? <span class="req" aria-hidden="true">*</span><span class="sr-only">(obrigatório)</span></legend>
+            <label class="choice"><input type="radio" name="course" id="course-first" value="masterclass" required><span>Masterclass — Do Comportamento à Aprendizagem</span></label>
+            <label class="choice"><input type="radio" name="course" value="at_pratica"><span>A.T. na Prática</span></label>
+            <label class="choice"><input type="radio" name="course" value="weekend_pass"><span>Weekend Pass</span></label>
+            <label class="choice"><input type="radio" name="course" value="imersao_crise"><span>Imersão em Gerenciamento de Crise</span></label>
+            <label class="choice"><input type="radio" name="course" value="outro"><span>Outro curso ou evento</span></label>
+            <label class="choice"><input type="radio" name="course" value="varios"><span>Mais de um curso ou evento</span></label>
+            <div class="field field--nested" id="course-detail-wrap" hidden>
+              <label for="f-course_detail" id="course-detail-label">Qual curso ou evento? <span class="req" aria-hidden="true">*</span><span class="sr-only">(obrigatório)</span></label>
+              <input type="text" id="f-course_detail" name="course_detail" maxlength="120" autocomplete="off" aria-describedby="h-course_detail e-course_detail">
+              <p class="help" id="h-course_detail"></p>
+              <p class="error" id="e-course_detail" hidden></p>
+            </div>
+            <p class="error" id="e-course" hidden></p>
+          </fieldset>
+
           <div class="field">
             <label for="f-body">Como foi a sua experiência? <span class="req" aria-hidden="true">*</span><span class="sr-only">(obrigatório)</span></label>
             <textarea id="f-body" name="body" rows="7" maxlength="1000" required aria-describedby="h-body e-body" placeholder="Conte o que você achou do conteúdo, o que aprendeu e como pretende aplicar."></textarea>
@@ -163,7 +181,7 @@
           <div class="field field--check">
             <label class="check-row" for="f-consent_own">
               <input type="checkbox" id="f-consent_own" name="consent_own" required aria-describedby="e-consent_own">
-              <span>Declaro que este depoimento descreve a minha própria experiência como participante da Masterclass “Do Comportamento à Aprendizagem”.</span>
+              <span>Declaro que este depoimento relata uma experiência real que tive em um curso, evento ou formação ministrado por Tâmara San’Galo ou por sua equipe.</span>
             </label>
             <p class="error" id="e-consent_own" hidden></p>
           </div>
@@ -171,7 +189,7 @@
           <div class="field field--check">
             <label class="check-row" for="f-consent_publication">
               <input type="checkbox" id="f-consent_publication" name="consent_publication" required aria-describedby="e-consent_publication">
-              <span>Autorizo que o meu depoimento seja analisado pela administração e, se aprovado, publicado neste site com a identificação pública que escolhi acima (nome, profissão ou área e turma, quando informados). Entendo que a publicação é opcional, que o envio não garante a publicação, que o texto poderá receber correções ortográficas e de digitação e que posso pedir a retirada a qualquer momento pelo e-mail psicoepedagoga@gmail.com.</span>
+              <span>Autorizo que meu depoimento seja analisado pela administração e, se aprovado, publicado neste site com a identificação pública que escolhi. Estou ciente de que a publicação é opcional, que o texto poderá receber correções ortográficas e de digitação sem alteração do seu sentido e que posso solicitar a retirada do depoimento pelo e-mail informado na Política de Privacidade.</span>
             </label>
             <p class="error" id="e-consent_publication" hidden></p>
           </div>

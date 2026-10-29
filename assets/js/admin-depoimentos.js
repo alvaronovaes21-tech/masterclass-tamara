@@ -99,6 +99,40 @@
   }
   function encPath(p) { return p.split('/').map(encodeURIComponent).join('/'); }
 
+  // ---------- Curso ou evento ----------
+  // Mantenha os nomes iguais aos do formulário público e da Edge Function (validate.ts).
+  var COURSES = [
+    ['masterclass', 'Masterclass — Do Comportamento à Aprendizagem'],
+    ['at_pratica', 'A.T. na Prática'],
+    ['weekend_pass', 'Weekend Pass'],
+    ['imersao_crise', 'Imersão em Gerenciamento de Crise'],
+    ['outro', 'Outro curso ou evento'],
+    ['varios', 'Mais de um curso ou evento']
+  ];
+  var COURSE_NAME = {}; COURSES.forEach(function (c) { COURSE_NAME[c[0]] = c[1]; });
+  var COURSE_DETAIL = { outro: true, varios: true };
+  var NO_COURSE = 'Curso ou evento não informado';
+  var PUBLIC_COURSE = {
+    masterclass: 'Participante da Masterclass — Do Comportamento à Aprendizagem',
+    at_pratica: 'Participante do A.T. na Prática',
+    weekend_pass: 'Participante do Weekend Pass',
+    imersao_crise: 'Participante da Imersão em Gerenciamento de Crise'
+  };
+  // Resumo para a administração (como o participante informou / como está salvo)
+  function courseText(key, detail) {
+    if (!key) return NO_COURSE;
+    var n = COURSE_NAME[key] || key;
+    return COURSE_DETAIL[key] && detail ? n + ': ' + detail : n;
+  }
+  // Mesma regra do servidor: o que aparece no site (null = nada)
+  function publicCourse(key, detail, detailPublic) {
+    if (!key) return null;
+    if (PUBLIC_COURSE[key]) return PUBLIC_COURSE[key];
+    if (key === 'outro') return detail ? 'Participante de: ' + detail : null;
+    if (key === 'varios') return detailPublic && detail ? 'Participante de: ' + detail : 'Participante de múltiplas formações';
+    return null;
+  }
+
   // ---------- Estado ----------
   var items = [], byId = {}, urls = {}, filter = 'pending', selectedId = null;
   var FILTERS = [
@@ -167,6 +201,7 @@
       box.appendChild(h('button', { type: 'button', class: 'adm-item', role: 'listitem', 'aria-current': t.id === selectedId ? 'true' : 'false',
         onclick: function () { selectedId = t.id; renderList(); renderEditor(); window.scrollTo({ top: 0 }); } },
         h('span', { class: 'adm-item__top' }, h('strong', { text: t.display_name }), h('time', { datetime: t.created_at, text: fmtD(t.created_at) })),
+        h('span', { class: 'adm-item__course' + (t.course_key ? '' : ' is-missing'), text: courseText(t.course_key, t.course_detail) }),
         h('p', { text: t.body }),
         h('span', { class: 'pills' }, statusPills(t))));
     });
@@ -206,7 +241,7 @@
     body_edited: 'Texto editado', identification_edited: 'Identificação pública editada', photo_replaced: 'Foto substituída',
     photo_removed: 'Foto removida', photo_consent_revoked: 'Autorização de uso da foto revogada',
     author_confirmation_required: 'Marcado como exigindo confirmação do autor', author_confirmed: 'Confirmação do autor registrada',
-    note_edited: 'Observação interna editada', deleted: 'Excluído'
+    note_edited: 'Observação interna editada', course_edited: 'Curso ou evento editado', deleted: 'Excluído'
   };
 
   function field(id, label, control, help) {
@@ -233,6 +268,31 @@
     inBody.addEventListener('input', function () { counter.textContent = inBody.value.length + ' caracteres'; });
     var chkFlag = it.needs_author_confirmation ? null : h('input', { type: 'checkbox', id: 'ed-flag' });
 
+    // Curso ou evento: a administração confere/corrige a identificação sem tocar no texto original do relato
+    var selCourse = h('select', { id: 'ed-course' },
+      it.course_key ? null : h('option', { value: '', text: NO_COURSE }),
+      COURSES.map(function (c) { return h('option', { value: c[0], text: c[1] }); }));
+    selCourse.value = it.course_key || '';
+    var inCourseDetail = h('input', { type: 'text', id: 'ed-course-detail', maxlength: '200', value: it.course_detail || '' });
+    var chkCoursePub = h('input', { type: 'checkbox', id: 'ed-course-pub' }); chkCoursePub.checked = !!it.course_detail_public;
+    var courseDetailLabel = h('label', { for: 'ed-course-detail' });
+    var courseDetailField = h('div', { class: 'field field--nested' }, courseDetailLabel, inCourseDetail);
+    var coursePubField = h('div', { class: 'field field--check' }, h('label', { class: 'check-row', for: 'ed-course-pub' }, chkCoursePub,
+      h('span', { text: 'Autorizo exibir publicamente os nomes informados (sem isso, aparece “Participante de múltiplas formações”).' })));
+    var coursePreview = h('p', { class: 'help adm-course-preview' });
+    function updateCourseUi() {
+      var k = selCourse.value;
+      courseDetailField.hidden = !COURSE_DETAIL[k];
+      coursePubField.hidden = k !== 'varios';
+      courseDetailLabel.textContent = k === 'varios' ? 'Cursos ou eventos informados' : 'Nome do curso ou evento';
+      var label = publicCourse(k || null, clean(inCourseDetail.value) || null, k === 'varios' && chkCoursePub.checked);
+      coursePreview.textContent = label ? 'Aparecerá no site como: ' + label : 'Nada será exibido sobre o curso ou evento (depoimento sem informação confirmada).';
+    }
+    selCourse.addEventListener('change', updateCourseUi);
+    inCourseDetail.addEventListener('input', updateCourseUi);
+    chkCoursePub.addEventListener('change', updateCourseUi);
+    updateCourseUi();
+
     function dirtyPatch() {
       var p = {};
       var dn = clean(inDisplay.value); if (dn !== it.display_name) p.display_name = dn;
@@ -241,9 +301,21 @@
       var bd = inBody.value.replace(/\r\n?/g, '\n').trim(); if (bd !== it.body) p.body = bd;
       var nt = inNote.value.trim() || null; if (nt !== (it.admin_note || null)) p.admin_note = nt;
       if (chkFlag && chkFlag.checked) p.needs_author_confirmation = true;
+      var ck = selCourse.value || null;
+      if (ck && ck !== (it.course_key || null)) p.course_key = ck;
+      var cd = ck && COURSE_DETAIL[ck] ? (clean(inCourseDetail.value) || null) : null;
+      if (ck && cd !== (it.course_detail || null)) p.course_detail = cd;
+      var cp = ck === 'varios' ? chkCoursePub.checked : false;
+      if (ck && cp !== !!it.course_detail_public) p.course_detail_public = cp;
       return p;
     }
     function check(p) {
+      var kc = selCourse.value;
+      if (COURSE_DETAIL[kc]) {
+        var dc = clean(inCourseDetail.value), mx = kc === 'outro' ? 120 : 200;
+        if (dc.length < 2) return kc === 'outro' ? 'Informe o nome do curso ou evento.' : 'Informe quais cursos ou eventos foram mencionados.';
+        if (dc.length > mx) return 'Curso ou evento: no máximo ' + mx + ' caracteres.';
+      }
       if ('display_name' in p && (p.display_name.length < 2 || p.display_name.length > 80)) return 'O nome público deve ter de 2 a 80 caracteres.';
       if ('body' in p && (p.body.length < 30 || p.body.length > 1200)) return 'O texto deve ter de 30 a 1200 caracteres.';
       if (p.profession && p.profession.length > 80) return 'Profissão: no máximo 80 caracteres.';
@@ -293,6 +365,7 @@
         h('dt', { text: 'Nome informado' }), h('dd', { text: it.author_name }),
         h('dt', { text: 'Contato' }), h('dd', { text: it.author_contact || 'não informado' }),
         h('dt', { text: 'Identificação escolhida' }), h('dd', { text: ({ full: 'Nome completo', first: 'Primeiro nome', first_initial: 'Nome e inicial do sobrenome', custom: 'Outra forma (personalizada)' })[it.display_choice] || it.display_choice }),
+        h('dt', { text: 'Curso ou evento informado pelo participante' }), h('dd', { text: courseText(it.course_key_original, it.course_detail_original) }),
         h('dt', { text: 'Recebido em' }), h('dd', { text: fmtDT(it.created_at) }),
         h('dt', { text: 'Consentimento' }), h('dd', { text: 'texto ' + fmtDT(it.consent_at) + ' (versão ' + it.consent_version + ')' }),
         h('dt', { text: 'Uso da foto' }), h('dd', { text: it.photo_consent ? 'autorizado em ' + fmtDT(it.photo_consent_at) : 'não autorizado' }))));
@@ -322,6 +395,9 @@
       field('ed-display', 'Nome público', inDisplay, 'Respeite a escolha do participante (veja “Identificação escolhida”).'),
       field('ed-prof', 'Profissão / área', inProf),
       field('ed-cohort', 'Turma / modalidade', inCohort)));
+    box.appendChild(h('div', { class: 'adm-course' },
+      field('ed-course', 'Curso ou evento', selCourse, it.course_key ? 'Confira a identificação antes de publicar. Isso não altera o texto do relato.' : 'Depoimento antigo, sem curso ou evento confirmado. Só escolha uma opção se tiver certeza.'),
+      courseDetailField, coursePubField, coursePreview));
     box.appendChild(field('ed-body', 'Texto do depoimento', inBody));
     box.appendChild(counter);
     box.appendChild(h('p', { class: 'help', text: 'Corrija apenas ortografia e digitação. Não mude o sentido nem acrescente declarações. Mudanças maiores exigem a confirmação do autor antes da publicação.' }));

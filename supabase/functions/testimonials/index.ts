@@ -10,7 +10,7 @@
 //   TURNSTILE_SECRET_KEY (opcional) ativa o CAPTCHA Cloudflare Turnstile
 //   IP_HASH_SALT         (recomendado) segredo usado para anonimizar o IP no limitador de envios
 import { createClient } from 'npm:@supabase/supabase-js@2';
-import { checkPhoto, validateSubmission, type RawFields } from './validate.ts';
+import { checkPhoto, publicCourseLabel, validateSubmission, type RawFields } from './validate.ts';
 
 const BUCKET = 'testimonial-photos';
 const MAX_REQUEST_BYTES = 8 * 1024 * 1024;
@@ -69,7 +69,7 @@ async function verifyTurnstile(token: string, req: Request): Promise<boolean> {
 async function listPublic(req: Request): Promise<Response> {
   const { data, error } = await sb
     .from('testimonials')
-    .select('display_name, profession, cohort, body, published_at, photo_path, photo_consent, featured_position')
+    .select('display_name, profession, cohort, body, published_at, photo_path, photo_consent, featured_position, course_key, course_detail, course_detail_public')
     .eq('status', 'approved')
     .eq('published', true)
     .eq('needs_author_confirmation', false)
@@ -91,6 +91,7 @@ async function listPublic(req: Request): Promise<Response> {
     name: r.display_name,
     profession: r.profession || null,
     cohort: r.cohort || null,
+    course: publicCourseLabel(r.course_key, r.course_detail, r.course_detail_public),
     text: r.body,
     date: r.published_at ? String(r.published_at).slice(0, 10) : null,
     photo_url: r.photo_path && r.photo_consent ? urlByPath.get(r.photo_path) ?? null : null,
@@ -109,7 +110,7 @@ async function receive(req: Request): Promise<Response> {
   try { form = await req.formData(); } catch { return json(req, { ok: false, message: 'Envio inválido.' }, 400); }
 
   const raw: RawFields = {};
-  for (const k of ['author_name', 'display_choice', 'custom_name', 'profession', 'cohort', 'contact', 'body', 'consent_own',
+  for (const k of ['author_name', 'display_choice', 'custom_name', 'profession', 'cohort', 'contact', 'course', 'course_detail', 'body', 'consent_own',
     'consent_publication', 'photo_consent', 'consent_version', 'website', 'elapsed'] as const) {
     const v = form.get(k);
     raw[k] = typeof v === 'string' ? v.slice(0, 5000) : '';
@@ -171,6 +172,8 @@ async function receive(req: Request): Promise<Response> {
     display_name: v.display_name,
     profession: v.profession,
     cohort: v.cohort,
+    course_key: v.course_key,
+    course_detail: v.course_detail,
     body: v.body,
     original_body: v.body,
     photo_path: photoPath,

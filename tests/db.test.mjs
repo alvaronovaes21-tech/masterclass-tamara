@@ -3,8 +3,7 @@
 import { test, before } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { PGlite } from '@electric-sql/pglite';
-import { pg_trgm } from '@electric-sql/pglite/contrib/pg_trgm';
+import { createDb, MIGRATION_FILES, readMigration } from './helpers/db.mjs';
 
 const ADMIN = '11111111-1111-1111-1111-111111111111';
 const OUTSIDER = '22222222-2222-2222-2222-222222222222';
@@ -32,28 +31,11 @@ async function insertTestimonial(over = {}) {
 }
 
 before(async () => {
-  db = new PGlite({ extensions: { pg_trgm } });
-  await db.exec(`
-    create role anon nologin; create role authenticated nologin; create role service_role nologin bypassrls;
-    create schema auth; create schema extensions; create schema storage;
-    create table auth.users (id uuid primary key);
-    create function auth.jwt() returns jsonb language sql stable as $$ select coalesce(nullif(current_setting('request.jwt.claims', true), ''), '{}')::jsonb $$;
-    create function auth.uid() returns uuid language sql stable as $$ select nullif(auth.jwt() ->> 'sub', '')::uuid $$;
-    create table storage.buckets (id text primary key, name text, public boolean, file_size_limit bigint, allowed_mime_types text[]);
-    create table storage.objects (id uuid default gen_random_uuid() primary key, bucket_id text, name text);
-    alter table storage.objects enable row level security;
-    grant usage on schema auth, extensions, storage, public to anon, authenticated, service_role;
-    grant all on all tables in schema public, storage to anon, authenticated, service_role;
-    grant execute on all functions in schema auth, extensions to anon, authenticated, service_role;
-    alter default privileges in schema public grant all on tables to anon, authenticated, service_role;
-    insert into auth.users values ('${ADMIN}'), ('${OUTSIDER}');
-  `);
-  await db.exec(readFileSync(new URL('../supabase/migrations/20261029000000_depoimentos.sql', import.meta.url), 'utf8'));
-  await db.exec(`insert into admin_users (user_id) values ('${ADMIN}')`);
+  db = await createDb({ adminId: ADMIN, otherIds: [OUTSIDER] }); // TODAS as migrações, em ordem
 });
 
-test('migração é idempotente (pode ser executada novamente)', async () => {
-  await db.exec(readFileSync(new URL('../supabase/migrations/20261029000000_depoimentos.sql', import.meta.url), 'utf8'));
+test('migrações são idempotentes (podem ser executadas novamente)', async () => {
+  for (let i = 0; i < MIGRATION_FILES.length; i++) await db.exec(readMigration(i));
 });
 
 test('público (anon) não lê, não grava e não altera nada', async () => {
@@ -230,11 +212,133 @@ test('bucket de fotos é privado, com limite e tipos permitidos; só admin acess
   await as('authenticated', ADMIN, async () => assert.equal((await db.query('select * from storage.objects')).rows.length, 1));
 });
 
-test('textos de consentimento da migração = textos exibidos no formulário', async () => {
+test('textos de consentimento da migração (v2) = textos exibidos no formulário; v1 continua registrada', async () => {
   const html = readFileSync(new URL('../enviar-depoimento/index.html', import.meta.url), 'utf8');
-  const row = (await db.query("select * from consent_texts where version='v1-2026-10'")).rows[0];
+  const version = /data-consent-version="([^"]+)"/.exec(html)[1];
+  assert.equal(version, 'v2-2026-10');
+  const row = (await db.query('select * from consent_texts where version=$1', [version])).rows[0];
   const decode = (s) => s.replace(/&quot;/g, '"').replace(/&amp;/g, '&');
+  const page = decode(html).replace(/\s+/g, ' ');
   for (const txt of [row.own_experience_text, row.publication_text, row.photo_text]) {
-    assert.ok(decode(html).replace(/\s+/g, ' ').includes(txt), `Texto não encontrado no formulário: ${txt.slice(0, 60)}…`);
+    assert.ok(page.includes(txt), `Texto não encontrado no formulário: ${txt.slice(0, 60)}…`);
   }
+  // frases exigidas
+  assert.equal(row.own_experience_text, 'Declaro que este depoimento relata uma experiência real que tive em um curso, evento ou formação ministrado por Tâmara San’Galo ou por sua equipe.');
+  assert.equal(row.publication_text, 'Autorizo que meu depoimento seja analisado pela administração e, se aprovado, publicado neste site com a identificação pública que escolhi. Estou ciente de que a publicação é opcional, que o texto poderá receber correções ortográficas e de digitação sem alteração do seu sentido e que posso solicitar a retirada do depoimento pelo e-mail informado na Política de Privacidade.');
+  // a v1 NÃO foi alterada (depoimentos antigos continuam apontando para o texto que aceitaram)
+  const v1 = (await db.query("select own_experience_text from consent_texts where version='v1-2026-10'")).rows[0];
+  assert.match(v1.own_experience_text, /minha própria experiência como participante da Masterclass/);
+  assert.ok(!page.includes(v1.own_experience_text), 'texto antigo não pode continuar no formulário');
+});
+
+// ---------------------------------------------------------------------
+// Curso ou evento
+async function insertV2(over = {}) {
+  const t = { key: 'weekend_pass', detail: null, name: 'Pessoa V2', body: 'Participei do evento e o conteúdo foi muito claro e aplicável ao meu dia a dia.', ...over };
+  const r = await db.query(
+    `insert into testimonials (author_name, display_choice, display_name, body, original_body, consent_own_experience, consent_publication,
+       consent_version, course_key, course_detail)
+     values ($1,'first','Pessoa',$2,$2,true,true,'v2-2026-10',$3,$4) returning id`, [t.name, t.body, t.key, t.detail]);
+  return r.rows[0].id;
+}
+const courseRow = async (id) => (await db.query('select course_key, course_detail, course_detail_public, course_key_original, course_detail_original from testimonials where id=$1', [id])).rows[0];
+
+test('curso/evento: cada opção é aceita; "outro" e "varios" exigem o complemento; nas demais ele não existe', async () => {
+  for (const key of ['masterclass', 'at_pratica', 'weekend_pass', 'imersao_crise']) {
+    const id = await insertV2({ key });
+    assert.deepEqual(await courseRow(id), { course_key: key, course_detail: null, course_detail_public: false, course_key_original: key, course_detail_original: null });
+  }
+  const o = await insertV2({ key: 'outro', detail: '  Curso   de   ABA  ' });
+  assert.deepEqual(await courseRow(o), { course_key: 'outro', course_detail: 'Curso de ABA', course_detail_public: false, course_key_original: 'outro', course_detail_original: 'Curso de ABA' });
+  const v = await insertV2({ key: 'varios', detail: 'Weekend Pass e A.T. na Prática' });
+  assert.equal((await courseRow(v)).course_detail, 'Weekend Pass e A.T. na Prática');
+  // o complemento enviado junto de uma opção que não o usa é descartado pelo banco
+  const w = await insertV2({ key: 'weekend_pass', detail: 'lixo' });
+  assert.equal((await courseRow(w)).course_detail, null);
+  // regras de integridade
+  await rejects(insertV2({ key: 'outro', detail: null }), /testimonials_course_detail_rule/);
+  await rejects(insertV2({ key: 'varios', detail: ' ' }), /testimonials_course_detail_rule/);
+  await rejects(insertV2({ key: 'outro', detail: 'x' }), /testimonials_course_detail_rule/);
+  await rejects(insertV2({ key: 'outro', detail: 'x'.repeat(201) }), /testimonials_course_detail_rule/);
+  await rejects(insertV2({ key: 'curso_inventado' }), /testimonials_course_key(_original)?_valid/);
+  await rejects(insertV2({ key: null }), /testimonials_course_required_since_v2/);
+});
+
+test('curso/evento: depoimentos antigos (v1) são preservados e ficam sem curso ("não informado")', async () => {
+  const old = await insertTestimonial();                       // formato antigo: v1, sem curso
+  assert.deepEqual(await courseRow(old), { course_key: null, course_detail: null, course_detail_public: false, course_key_original: null, course_detail_original: null });
+  // continuam podendo ser aprovados e publicados sem inventar curso
+  await as('authenticated', ADMIN, async () => {
+    await db.query("update testimonials set status='approved', published=true where id=$1", [old]);
+    assert.equal((await courseRow(old)).course_key, null);
+  });
+});
+
+test('migração 2 sobre um banco já em uso: preserva depoimentos, destaques e consentimentos (v1)', async () => {
+  const db1 = await createDb({ adminId: ADMIN, otherIds: [OUTSIDER], migrations: 1 });   // estado de produção ANTES da atualização
+  const ids = [];
+  for (let i = 0; i < 3; i++) {
+    const r = await db1.query(
+      `insert into testimonials (author_name, display_choice, display_name, body, original_body, consent_own_experience, consent_publication, consent_version,
+         status, published, published_at, profession)
+       values ($1,'first',$1,$2,$2,true,true,'v1-2026-10','approved',true,now(),'Psicóloga') returning id`,
+      [`Antigo${i}`, `Texto antigo número ${i} publicado antes da atualização do formulário.`]);
+    ids.push(r.rows[0].id);
+  }
+  await db1.exec(`select set_config('request.jwt.claims', '${JSON.stringify({ sub: ADMIN, email: 'a@x.com' })}', false); set role authenticated`);
+  await db1.query('select set_featured_testimonials($1::uuid[])', [[ids[2], ids[0]]]);
+  await db1.exec('reset role');
+  const before = (await db1.query('select id, display_name, body, status, published, featured_position, consent_version, consent_at, profession from testimonials order by display_name')).rows;
+  assert.equal(before.length, 3);
+
+  await db1.exec(readMigration(1));                                                          // aplica a atualização
+  const after = (await db1.query('select id, display_name, body, status, published, featured_position, consent_version, consent_at, profession from testimonials order by display_name')).rows;
+  assert.deepEqual(after, before, 'nenhum campo existente pode mudar');
+  assert.deepEqual((await db1.query('select featured_position p from testimonials where featured_position is not null order by featured_position')).rows.length, 2);
+  const c = (await db1.query('select course_key, course_detail, course_detail_public, course_key_original from testimonials')).rows;
+  assert.ok(c.every((r) => r.course_key === null && r.course_detail === null && r.course_detail_public === false && r.course_key_original === null), 'nenhum curso é atribuído retroativamente');
+  // e a nova versão do texto convive com a antiga
+  assert.deepEqual((await db1.query('select version from consent_texts order by version')).rows.map((r) => r.version), ['v1-2026-10', 'v2-2026-10']);
+  await db1.close();
+});
+
+test('curso/evento: administração corrige a identificação sem alterar o que o participante informou nem o relato', async () => {
+  const id = await insertV2({ key: 'outro', detail: 'Curso de Aba' });
+  await as('authenticated', ADMIN, async () => {
+    await db.query("update testimonials set status='approved', published=true where id=$1", [id]);
+    // corrige o nome do curso (ex.: ortografia) e publica
+    await db.query("update testimonials set course_detail='Curso de ABA' where id=$1", [id]);
+    let r = await courseRow(id);
+    assert.equal(r.course_detail, 'Curso de ABA'); assert.equal(r.course_detail_original, 'Curso de Aba', 'o informado originalmente permanece');
+    // troca para uma opção padrão: o complemento some
+    await db.query("update testimonials set course_key='weekend_pass' where id=$1", [id]);
+    r = await courseRow(id);
+    assert.deepEqual(r, { course_key: 'weekend_pass', course_detail: null, course_detail_public: false, course_key_original: 'outro', course_detail_original: 'Curso de Aba' });
+    // "varios": a lista só é pública se a administração autorizar; nas outras opções não é possível
+    await db.query("update testimonials set course_key='varios', course_detail='Weekend Pass e Imersão' where id=$1", [id]);
+    assert.equal((await courseRow(id)).course_detail_public, false);
+    await db.query("update testimonials set course_detail_public=true where id=$1", [id]);
+    assert.equal((await courseRow(id)).course_detail_public, true);
+    await db.query("update testimonials set course_key='masterclass' where id=$1", [id]);
+    assert.equal((await courseRow(id)).course_detail_public, false, 'autorização de lista não sobrevive à troca de opção');
+    // edição do curso não mexe no relato nem em publicação
+    const t = (await db.query('select body, original_body, published, needs_author_confirmation n from testimonials where id=$1', [id])).rows[0];
+    assert.equal(t.body, t.original_body); assert.equal(t.published, true); assert.equal(t.n, false);
+    // campos protegidos
+    for (const col of ["course_key_original='masterclass'", "course_detail_original='x'"]) {
+      await rejects(db.query(`update testimonials set ${col} where id=$1`, [id]), /permission denied/);
+    }
+    // não pode voltar a "não informado" nem a uma opção inventada
+    await rejects(db.query('update testimonials set course_key=null where id=$1', [id]), /testimonials_course_required_since_v2/);
+    await rejects(db.query("update testimonials set course_key='inventado' where id=$1", [id]), /testimonials_course_key_valid/);
+  });
+  // sem permissão: público e conta comum não alteram
+  await as('authenticated', OUTSIDER, async () => {
+    const u = await db.query("update testimonials set course_key='at_pratica' where id=$1", [id]);
+    assert.equal(u.affectedRows, 0);
+  });
+  await as('anon', null, async () => rejects(db.query("update testimonials set course_key='at_pratica'"), /permission denied/));
+  const acts = (await db.query('select action, details::text d from testimonial_history where testimonial_id=$1 and action=$2', [id, 'course_edited'])).rows;
+  assert.ok(acts.length >= 4, 'cada correção do curso fica no histórico');
+  assert.ok(!acts.map((a) => a.d).join('').includes('ABA'), 'histórico não copia o texto informado');
 });

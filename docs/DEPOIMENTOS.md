@@ -14,6 +14,7 @@ O site é estático (GitHub Pages), então não tem servidor próprio. Para guar
 | Link para alunos | `/enviar-depoimento/` | Formulário público (celular e computador) |
 | Painel | `/admin/depoimentos/` | Moderação (somente administradores) |
 | Banco, regras de acesso, bucket privado de fotos | `supabase/migrations/20261029000000_depoimentos.sql` | Tabelas, permissões (RLS), histórico, regras |
+| Curso/evento e novos textos de consentimento (v2) | `supabase/migrations/20261029120000_curso_evento.sql` | Colunas do curso/evento, regras e histórico (rode depois da primeira) |
 | Função de servidor | `supabase/functions/testimonials/` | Recebe envios (valida tudo, confere a foto de verdade, limita abusos) e entrega a lista pública |
 | Configuração pública do site | `assets/js/site-config.js` | URL do projeto + chave pública |
 
@@ -28,6 +29,7 @@ Fluxo: aluno envia → registro **pendente** (nunca público) → administraçã
 ### 2. Criar o banco, as regras de acesso e o bucket de fotos
 1. No Supabase abra **SQL Editor → New query**.
 2. Cole **todo** o conteúdo de `supabase/migrations/20261029000000_depoimentos.sql` e clique em **Run**. (Pode ser executado de novo sem problemas.)
+3. Abra uma nova consulta, cole **todo** o conteúdo de `supabase/migrations/20261029120000_curso_evento.sql` e clique em **Run** (curso/evento e textos de consentimento v2). Em uma instalação nova rode as duas, nesta ordem.
 
 Isso cria as tabelas, o histórico, as regras de integridade, o bucket **privado** `testimonial-photos` (5 MB, só JPEG/PNG/WebP) e as permissões.
 
@@ -71,6 +73,21 @@ Publique o site (commit + push para o GitHub Pages).
 - Recarregue a landing page: o depoimento deve aparecer.
 - Depois **exclua** os depoimentos de teste pelo painel.
 
+## Atualização: curso ou evento (versão v2 do formulário)
+
+O formulário agora pergunta **"Qual curso ou evento você realizou?"** (Masterclass, A.T. na Prática, Weekend Pass, Imersão em Gerenciamento de Crise, Outro, Mais de um) e usa os novos textos de confirmação e de autorização de publicação (versão `v2-2026-10`). Se o seu Supabase já tinha a primeira versão funcionando, faça **nesta ordem**:
+
+1. **Banco:** no SQL Editor do Supabase, rode `supabase/migrations/20261029120000_curso_evento.sql` (uma vez; pode repetir sem problema). Ela **não apaga nem altera** depoimentos existentes: eles ficam com o curso "não informado" e continuam com o texto de consentimento que aceitaram (v1).
+2. **Função de servidor:** na pasta do projeto, rode `npx supabase functions deploy testimonials --no-verify-jwt` (a nova função recusa envios sem curso e só aceita o texto novo).
+3. **Site:** publique os arquivos (commit + push).
+
+Entre o passo 2 e o 3 (alguns minutos), o formulário antigo ainda no ar será recusado com a mensagem "A página está desatualizada. Recarregue e tente novamente." Para evitar isso, faça os passos 2 e 3 em seguida. **Não publique o site antes dos passos 1 e 2**, ou os envios falharão.
+
+Como o curso/evento funciona:
+- **Obrigatório** no formulário e também no servidor e no banco (envios novos sem curso são recusados). "Outro curso ou evento" e "Mais de um curso ou evento" exigem o campo complementar.
+- **No site**, cada depoimento mostra uma linha discreta, por exemplo "Participante do Weekend Pass". "Outro" mostra "Participante de: <nome informado>" (após a aprovação do depoimento). "Mais de um" mostra "Participante de múltiplas formações", a menos que você marque **"Autorizo exibir publicamente os nomes informados"** no painel.
+- **Depoimentos antigos** (sem curso informado) não exibem nenhum curso no site e aparecem no painel como "Curso ou evento não informado". O sistema nunca atribui um curso por conta própria.
+- **No painel**, a lista e o depoimento mostram o curso. Você pode corrigir a opção (ou o nome) antes de publicar; o que o participante informou originalmente fica guardado em "Dados privados" e a correção entra no histórico. Isso nunca altera o texto do relato.
 ## Links para compartilhar
 - **Alunos (WhatsApp):** `https://masterclassdocomportamento.com.br/enviar-depoimento/`
 - **Painel (só administradores):** `https://masterclassdocomportamento.com.br/admin/depoimentos/` (não é indexado nem aparece no site)
@@ -90,7 +107,7 @@ Publique o site (commit + push para o GitHub Pages).
 ## Segurança e privacidade (resumo)
 - Visitantes **não leem nem gravam** nada direto no banco; só a função de servidor, que valida tamanhos, links/HTML, consentimentos, tipo real e dimensões da foto, campo-isca e tempo mínimo de preenchimento, e limita envios por IP anonimizado (4/hora, 10/dia).
 - Fotos em bucket **privado**; o público só vê por endereço temporário (1 h) e apenas de depoimentos publicados com autorização da foto. O navegador reduz a foto e remove metadados (EXIF/GPS).
-- Consentimentos (texto, foto separada, versão do texto, data) ficam gravados no registro. Textos oficiais em `consent_texts`. Para mudar o texto: crie **nova versão** na tabela, atualize `CONSENT_VERSION` em `supabase/functions/testimonials/validate.ts`, `data-consent-version` e o texto em `enviar-depoimento/index.html` (o teste automático verifica que HTML e banco são idênticos).
+- Consentimentos (texto, foto separada, versão do texto, data) ficam gravados no registro. Textos oficiais em `consent_texts`. Textos atuais: versão `v2-2026-10` (a `v1-2026-10` permanece registrada para os depoimentos antigos e nunca deve ser editada). Para mudar o texto: crie **nova versão** na tabela (nova migração), atualize `CONSENT_VERSION` em `supabase/functions/testimonials/validate.ts`, `data-consent-version` e o texto em `enviar-depoimento/index.html` (o teste automático verifica que HTML e banco são idênticos).
 - Conteúdo é sempre inserido como **texto** (sem `innerHTML`) e as páginas têm CSP restritiva.
 - A página do formulário e o painel **não carregam** Google Ads/Tag.
 

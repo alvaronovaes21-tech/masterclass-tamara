@@ -39,7 +39,7 @@ async function newPage(deviceName, opts = {}) {
 async function submitDirect(over = {}, photo = null, ip = '198.51.100.1') {
   const fd = new FormData();
   const base = { author_name: 'Ana Paula Costa', display_choice: 'first_initial', custom_name: '', profession: 'Professora', cohort: 'Turma 2', contact: '', body: GOOD_BODY,
-    consent_own: 'true', consent_publication: 'true', photo_consent: 'false', consent_version: 'v1-2026-10', website: '', elapsed: '60000' };
+    course: 'masterclass', course_detail: '', consent_own: 'true', consent_publication: 'true', photo_consent: 'false', consent_version: 'v2-2026-10', website: '', elapsed: '60000' };
   for (const [k, v] of Object.entries({ ...base, ...over })) fd.append(k, v);
   if (photo) fd.append('photo', new Blob([photo.bytes], { type: photo.type || 'image/jpeg' }), photo.name || 'foto.jpg');
   const r = await fetch(origin + '/functions/v1/testimonials', { method: 'POST', body: fd, headers: { 'x-test-ip': ip } });
@@ -155,13 +155,15 @@ test('2. Landing (celular Android e iPhone): vídeo logo no início, ordem verti
 test('3. Formulário (celular): campos, contador, validação clara e consentimentos desmarcados', async () => {
   const page = await newPage('iPhone 13');
   await page.goto(origin + '/enviar-depoimento/'); await page.waitForLoadState('networkidle');
-  assert.match(await page.locator('.lead-dark').innerText(), /Você participou da Masterclass Do Comportamento à Aprendizagem\? Conte como foi sua experiência!/);
+  assert.match(await page.locator('.lead-dark').innerText(), /Você participou de algum curso, evento ou formação da Tâmara San’Galo\? Conte como foi sua experiência!/);
   assert.equal(await page.locator('meta[name=robots]').getAttribute('content'), 'noindex, nofollow');
   assert.equal(await page.locator('script[src*="googletagmanager"], script[src*="gtag"]').count(), 0, 'sem rastreadores na página de coleta de dados');
 
   // nenhum consentimento pré-marcado; nenhuma opção de identificação pré-marcada
   for (const sel of ['#f-consent_own', '#f-consent_publication', '#f-photo_consent']) assert.equal(await page.locator(sel).isChecked(), false);
   assert.equal(await page.locator('input[name=display_choice]:checked').count(), 0);
+  assert.equal(await page.locator('input[name=course]:checked').count(), 0, 'nenhum curso pré-selecionado');
+  assert.equal(await page.locator('#course-detail-wrap').isVisible(), false);
   // foto: galeria e câmera
   assert.equal(await page.locator('#in-camera').getAttribute('capture'), 'user');
   assert.match(await page.locator('#in-galeria').getAttribute('accept'), /image\/jpeg,image\/png,image\/webp/);
@@ -176,7 +178,7 @@ test('3. Formulário (celular): campos, contador, validação clara e consentime
   await page.click('#btn-enviar');
   await page.waitForSelector('#resumo-erros:not([hidden])');
   const summary = await page.locator('#resumo-lista').innerText();
-  for (const t of [/Nome: Informe seu nome/, /Identificação pública: Escolha como deseja/, /Depoimento: Escreva pelo menos 30 caracteres/, /relato é sobre a sua própria experiência/, /autorizar a análise e a possível publicação/]) assert.match(summary, t);
+  for (const t of [/Nome: Informe seu nome/, /Identificação pública: Escolha como deseja/, /Depoimento: Escreva pelo menos 30 caracteres/, /Curso ou evento: Selecione o curso ou evento que você realizou/, /Confirmação do relato: Confirme que o depoimento relata uma experiência real que você teve em um curso, evento ou formação/, /autorizar a análise e a possível publicação/]) assert.match(summary, t);
   assert.match(await page.locator('#e-author_name').innerText(), /Informe seu nome/);
   assert.equal(await page.locator('#f-author_name').getAttribute('aria-invalid'), 'true');
   assert.equal(server.log.filter((l) => l.startsWith('POST /functions')).length, before);
@@ -247,6 +249,7 @@ test('5. Envio pelo celular (com foto): confirmação, fica PENDENTE, foto priva
   await page.check('input[value=first_initial]');
   await page.fill('#f-profession', 'Psicopedagoga'); await page.fill('#f-cohort', 'Turma de outubro');
   await page.fill('#f-contact', 'maria@exemplo.com');
+  await page.check('input[name=course][value=weekend_pass]');
   await page.fill('#f-body', 'Gostei muito da masterclass. As funções do comportamento ficaram claras e já estou usando as ferramentas visuais no consultório.');
   await page.setInputFiles('#in-camera', { name: 'selfie.jpg', mimeType: 'image/jpeg', buffer: await jpeg(1600, 1200, true) });
   await page.waitForSelector('#photo-preview:not([hidden])');
@@ -273,7 +276,8 @@ test('5. Envio pelo celular (com foto): confirmação, fica PENDENTE, foto priva
   assert.equal(r.display_name, 'Maria L.'); assert.equal(r.author_name, 'Maria Souza Lima'); assert.equal(r.author_contact, 'maria@exemplo.com');
   assert.equal(r.profession, 'Psicopedagoga'); assert.equal(r.cohort, 'Turma de outubro');
   assert.equal(r.consent_own_experience, true); assert.equal(r.consent_publication, true); assert.equal(r.photo_consent, true);
-  assert.equal(r.consent_version, 'v1-2026-10'); assert.ok(r.consent_at); assert.ok(r.photo_consent_at);
+  assert.equal(r.consent_version, 'v2-2026-10'); assert.ok(r.consent_at); assert.ok(r.photo_consent_at);
+  assert.deepEqual([r.course_key, r.course_detail, r.course_key_original], ['weekend_pass', null, 'weekend_pass']);
   assert.equal(r.body, r.original_body);
   // foto guardada em bucket privado, com extensão decidida pelo servidor (nunca pelo nome enviado), e comprimida
   assert.match(r.photo_path, new RegExp(`^${r.id}/[0-9a-f-]{36}\\.jpg$`));
@@ -296,7 +300,13 @@ test('6. Servidor valida tudo de novo (tentativas de burlar o navegador)', async
     assert.match(r.json.errors[field], re, field);
   };
   await bad({ consent_publication: 'false' }, null, 'consent_publication', /autorizar/);
-  await bad({ consent_own: 'false' }, null, 'consent_own', /própria experiência/);
+  await bad({ consent_own: 'false' }, null, 'consent_own', /experiência real/);
+  await bad({ consent_version: 'v1-2026-10' }, null, 'consent_version', /desatualizada/);   // texto antigo não é mais aceito em novos envios
+  await bad({ course: '' }, null, 'course', /Selecione o curso ou evento/);
+  await bad({ course: 'curso_inventado' }, null, 'course', /opções da lista/);
+  await bad({ course: 'outro', course_detail: '' }, null, 'course_detail', /nome do curso/);
+  await bad({ course: 'varios', course_detail: '  ' }, null, 'course_detail', /Informe quais cursos/);
+  await bad({ course: 'outro', course_detail: '<script>alert(1)</script>' }, null, 'course_detail', /não permitidos/);
   await bad({ consent_version: 'v0' }, null, 'consent_version', /desatualizada/);
   await bad({ body: 'curto' }, null, 'body', /pelo menos 30/);
   await bad({ body: 'x'.repeat(1001) }, null, 'body', /no máximo 1000/);
@@ -417,6 +427,8 @@ test('9. Admin: editar, aprovar, publicar, ocultar; histórico; só aprovados+pu
   assert.equal(await page.locator('#editor h2').innerText(), 'Maria L.');
   const priv = await page.locator('.adm-private').innerText();
   assert.match(priv, /Maria Souza Lima/); assert.match(priv, /maria@exemplo\.com/); assert.match(priv, /autorizado em/);
+  assert.match(priv, /Curso ou evento informado pelo participante[\s\S]*Weekend Pass/);
+  assert.equal(await page.locator('#ed-course').inputValue(), 'weekend_pass');
   await page.waitForSelector('.adm-photo img'); // foto privada vista pela administração via URL assinada
   assert.equal(await page.locator('.adm-photo img').evaluate((i) => i.naturalWidth > 0), true);
   await page.screenshot({ path: SHOTS + 'admin-editor-Pixel7.png', fullPage: true });
@@ -438,7 +450,8 @@ test('9. Admin: editar, aprovar, publicar, ocultar; histórico; só aprovados+pu
   assert.equal(pub.others.length, 1); assert.equal(pub.others[0].name, 'Maria L.'); assert.match(pub.others[0].text, /no meu consultório/);
   assert.ok(pub.others[0].photo_url.startsWith(origin + '/storage/v1/object/sign/testimonial-photos/'), 'foto só por URL assinada');
   // a API pública só devolve os campos autorizados
-  assert.deepEqual(Object.keys(pub.others[0]).sort(), ['cohort', 'date', 'name', 'photo_url', 'profession', 'text']);
+  assert.deepEqual(Object.keys(pub.others[0]).sort(), ['cohort', 'course', 'date', 'name', 'photo_url', 'profession', 'text']);
+  assert.equal(pub.others[0].course, 'Participante do Weekend Pass');
   assert.ok(!/maria@exemplo|Souza|author|consent|id"/.test(JSON.stringify(pub)), JSON.stringify(pub));
   assert.equal((await fetch(pub.others[0].photo_url)).status, 200);
 
@@ -509,6 +522,8 @@ test('10. Admin: escolhe os 5 destaques e a ordem; o site mostra exatamente isso
   assert.equal(await site.locator('#dep-vazio').isVisible(), false);
   const maria = site.locator('#dep-destaques .testi__card', { hasText: 'Maria L.' });
   assert.match(await maria.innerText(), /Psicopedagoga · Turma de outubro/);
+  assert.equal(await maria.locator('.testi__course').innerText(), 'Participante do Weekend Pass');
+  assert.equal(await site.locator('#dep-destaques .testi__course', { hasText: 'Participante da Masterclass — Do Comportamento à Aprendizagem' }).count(), 4, 'os demais declararam a Masterclass');
   assert.equal(await maria.locator('img').getAttribute('alt'), 'Foto de Maria L.');
   await site.waitForFunction(() => document.querySelector('#dep-destaques img')?.complete);
   assert.equal(await maria.locator('img').evaluate((i) => i.naturalWidth > 0), true, 'foto autorizada aparece');
@@ -572,12 +587,18 @@ test('12. Conteúdo malicioso nunca executa (XSS) — nem na landing, nem no pai
   const card = site.locator('#dep-todos .testi__card', { hasText: 'texto perigoso' });
   assert.match(await card.innerText(), /<img src=x onerror="window\.__xss=1">/, 'aparece como texto literal');
   assert.equal(await card.locator('img, script, b, i').count(), 0);
+  assert.equal(await card.locator('.testi__course').count(), 0, 'depoimento antigo (sem curso): nada é inventado');
   assert.equal(await site.evaluate(() => window.__xss), undefined);
   await site.context().close();
   const page = await newPage(null, { allowErrors: true });
   await adminLogin(page); await page.waitForSelector('#panel-view:not([hidden])');
   await page.getByRole('button', { name: /Todos/ }).click();
-  await page.locator('.adm-item', { hasText: 'texto perigoso' }).click();
+  const legacyItem = page.locator('.adm-item', { hasText: 'texto perigoso' });
+  assert.match(await legacyItem.innerText(), /Curso ou evento não informado/);
+  await legacyItem.click();
+  assert.equal(await page.locator('#ed-course').inputValue(), '', 'registro antigo: sem curso confirmado');
+  assert.match(await page.locator('.adm-private').innerText(), /Curso ou evento informado pelo participante[\s\S]*Curso ou evento não informado/);
+  assert.equal(await page.locator('#ed-course-detail').isVisible(), false);
   assert.equal(await page.locator('#editor-corpo img, #editor-corpo script, #editor-corpo b').count(), 0);
   assert.equal(await page.evaluate(() => window.__xss), undefined);
   // limpa: exclui pelo painel (com confirmação em 2 etapas)
@@ -684,7 +705,264 @@ test('17. Sem configuração do Supabase: site continua normal e o formulário a
   await page.context().close();
 });
 
-test('18. Nenhum erro de console / violação de CSP durante os testes', async () => {
+// ---------------------------------------------------------------------
+// Curso ou evento
+const COURSE_CASES = [
+  { key: 'masterclass', label: 'Masterclass — Do Comportamento à Aprendizagem', pub: 'Participante da Masterclass — Do Comportamento à Aprendizagem' },
+  { key: 'at_pratica', label: 'A.T. na Prática', pub: 'Participante do A.T. na Prática' },
+  { key: 'weekend_pass', label: 'Weekend Pass', pub: 'Participante do Weekend Pass' },
+  { key: 'imersao_crise', label: 'Imersão em Gerenciamento de Crise', pub: 'Participante da Imersão em Gerenciamento de Crise' },
+  { key: 'outro', label: 'Outro curso ou evento', detail: 'Formação em Análise do Comportamento Aplicada', pub: 'Participante de: Formação em Análise do Comportamento Aplicada' },
+  { key: 'varios', label: 'Mais de um curso ou evento', detail: 'Weekend Pass e Imersão em Gerenciamento de Crise', pub: 'Participante de múltiplas formações', pubList: 'Participante de: Weekend Pass e Imersão em Gerenciamento de Crise' },
+];
+const courseName = (c) => `Curso ${c.key}`;
+const courseCase = (key) => COURSE_CASES.find((c) => c.key === key);
+
+test('18. Formulário (celular): envio de depoimento para CADA curso ou evento, com o complemento quando necessário', async () => {
+  const n0 = (await rows('select count(*)::int c from testimonials'))[0].c;
+  for (const [i, c] of COURSE_CASES.entries()) {
+    const page = await newPage('Pixel 7');
+    await page.context().setExtraHTTPHeaders({ 'x-test-ip': `192.0.2.${150 + i}` });   // IP diferente por envio (o limite de envios é por IP)
+    await page.goto(origin + '/enviar-depoimento/'); await page.waitForLoadState('networkidle');
+    await page.fill('#f-author_name', `Participante ${c.key}`);
+    await page.check('input[value=custom]'); await page.fill('#f-custom_name', courseName(c));
+    await page.check(`input[name=course][value=${c.key}]`);
+    assert.equal(await page.locator('#course-detail-wrap').isVisible(), !!c.detail, `${c.key}: complemento visível só em "outro" e "varios"`);
+    if (c.detail) {
+      assert.match(await page.locator('#course-detail-label').innerText(), c.key === 'outro' ? /Qual curso ou evento\?/ : /Quais cursos ou eventos você deseja mencionar\?/);
+      await page.fill('#f-course_detail', c.detail);
+    }
+    await page.fill('#f-body', `Depoimento sobre ${c.label}: o conteúdo foi muito útil para a minha prática profissional.`);
+    await page.check('#f-consent_own'); await page.check('#f-consent_publication');
+    if (c.key === 'varios') await page.screenshot({ path: SHOTS + 'form-curso-varios-Pixel7.png', fullPage: true });
+    await page.waitForTimeout(4300);   // preenchimento humano
+    await page.click('#btn-enviar');
+    await page.waitForSelector('#sucesso:not([hidden])');
+    assert.match(await page.locator('#sucesso').innerText(), /Seu depoimento foi recebido e será analisado antes de qualquer publicação\./);
+    const [r] = await rows('select * from testimonials where author_name=$1', [`Participante ${c.key}`]);
+    assert.ok(r, c.key + ' gravado');
+    assert.deepEqual([r.course_key, r.course_detail, r.course_key_original, r.course_detail_original], [c.key, c.detail ?? null, c.key, c.detail ?? null], c.key);
+    assert.equal(r.consent_version, 'v2-2026-10'); assert.equal(r.status, 'pending'); assert.equal(r.published, false); assert.equal(r.consent_own_experience, true);
+    await page.context().close();
+  }
+  assert.equal((await rows('select count(*)::int c from testimonials'))[0].c, n0 + 6);
+  // pendentes não aparecem no site (nem nome, nem texto, nem curso)
+  const pub = JSON.stringify(await publicList());
+  assert.ok(!/Curso (masterclass|at_pratica|weekend_pass|imersao_crise|outro|varios)|Formação em Análise|múltiplas formações|Imersão/.test(pub), pub);
+});
+
+test('19. Formulário: opções, campos complementares e bloqueio do envio sem os itens obrigatórios', async () => {
+  const page = await newPage('iPhone 13');
+  await page.context().setExtraHTTPHeaders({ 'x-test-ip': '192.0.2.200' });
+  await page.goto(origin + '/enviar-depoimento/'); await page.waitForLoadState('networkidle');
+  const posts = () => server.log.filter((l) => l.startsWith('POST /functions')).length;
+  const p0 = posts();
+
+  // seis opções exatamente como pedido, nenhuma marcada, antes das confirmações
+  assert.deepEqual(await page.$$eval('#course-group > .choice span', (e) => e.map((x) => x.textContent)), COURSE_CASES.map((c) => c.label));
+  assert.deepEqual(await page.$$eval('input[name=course]', (e) => e.map((x) => x.value)), COURSE_CASES.map((c) => c.key));
+  assert.equal(await page.locator('input[name=course]:checked').count(), 0);
+  assert.match(await page.locator('#course-group legend').first().innerText(), /Qual curso ou evento você realizou\?/);
+  const yCourse = (await page.locator('#course-group').boundingBox()).y, yConsent = (await page.locator('#f-consent_own').boundingBox()).y;
+  assert.ok(yCourse < yConsent, 'campo do curso vem antes das confirmações');
+
+  // preenche tudo, menos curso e confirmações
+  await page.fill('#f-author_name', 'Teste Bloqueio'); await page.check('input[value=first]');
+  await page.fill('#f-body', 'Texto de teste suficientemente longo para passar da validação mínima de caracteres.');
+  await page.click('#btn-enviar');
+  await page.waitForSelector('#resumo-erros:not([hidden])');
+  const s1 = await page.locator('#resumo-lista').innerText();
+  assert.match(s1, /Curso ou evento: Selecione o curso ou evento que você realizou/);
+  assert.match(await page.locator('#e-course').innerText(), /Selecione o curso ou evento/);
+  assert.match(s1, /Confirmação do relato/); assert.match(s1, /Autorização de publicação/);
+  assert.equal(posts(), p0, 'nada é enviado ao servidor');
+
+  // com curso escolhido, mas as confirmações continuam desmarcadas → continua bloqueado (cada uma obrigatória)
+  await page.check('input[name=course][value=weekend_pass]');
+  assert.equal(await page.locator('#e-course').isVisible(), false, 'erro some ao escolher');
+  await page.click('#btn-enviar');
+  const s2 = await page.locator('#resumo-lista').innerText();
+  assert.doesNotMatch(s2, /Curso ou evento/); assert.match(s2, /Confirmação do relato/); assert.match(s2, /Autorização de publicação/);
+  await page.check('#f-consent_own');
+  await page.click('#btn-enviar');
+  const s3 = await page.locator('#resumo-lista').innerText();
+  assert.doesNotMatch(s3, /Confirmação do relato/); assert.match(s3, /Autorização de publicação/);
+  assert.equal(posts(), p0);
+
+  // "Outro curso ou evento": aparece o complemento obrigatório
+  await page.check('input[name=course][value=outro]');
+  assert.equal(await page.locator('#f-course_detail').isVisible(), true);
+  await page.check('#f-consent_publication');
+  await page.click('#btn-enviar');
+  assert.match(await page.locator('#e-course_detail').innerText(), /Informe o nome do curso ou evento/);
+  assert.equal(await page.locator('#f-course_detail').getAttribute('aria-invalid'), 'true');
+  assert.equal(posts(), p0);
+  await page.fill('#f-course_detail', 'confira www.spam.com');
+  await page.click('#btn-enviar');
+  assert.match(await page.locator('#e-course_detail').innerText(), /não aceita links/);
+
+  // "Mais de um": complemento diferente, também obrigatório
+  await page.check('input[name=course][value=varios]');
+  assert.match(await page.locator('#course-detail-label').innerText(), /Quais cursos ou eventos você deseja mencionar\?/);
+  assert.match(await page.locator('#h-course_detail').innerText(), /Participante de múltiplas formações/);
+  assert.equal(await page.locator('#f-course_detail').inputValue(), 'confira www.spam.com', 'texto digitado é mantido ao trocar entre as duas opções com complemento');
+  await page.fill('#f-course_detail', '');
+  await page.click('#btn-enviar');
+  assert.match(await page.locator('#e-course_detail').innerText(), /Informe quais cursos ou eventos/);
+  assert.equal(posts(), p0);
+
+  // voltar a uma opção padrão: complemento some e é descartado
+  await page.fill('#f-course_detail', 'texto que não deve ser enviado');
+  await page.check('input[name=course][value=at_pratica]');
+  assert.equal(await page.locator('#course-detail-wrap').isVisible(), false);
+  await page.check('input[name=course][value=outro]');
+  assert.equal(await page.locator('#f-course_detail').inputValue(), '', 'campo é limpo ao esconder');
+  await page.screenshot({ path: SHOTS + 'form-curso-outro-iPhone13.png', fullPage: true });
+  await page.context().close();
+  assert.equal((await rows("select count(*)::int c from testimonials where author_name='Teste Bloqueio'"))[0].c, 0);
+});
+
+test('20. Painel: mostra o curso informado, permite conferir/corrigir antes de publicar e o site exibe a identificação correta', async () => {
+  const feat0 = (await publicList()).featured.map((x) => x.name);
+  assert.ok(feat0.length >= 3, 'há destaques a preservar: ' + feat0);
+  const page = await newPage('Pixel 7');
+  await adminLogin(page); await page.waitForSelector('#panel-view:not([hidden])');
+  await page.getByRole('button', { name: /Todos/ }).click();
+  const item = (key) => itemByName(page, courseName(courseCase(key)));
+  // no celular a lista some enquanto um depoimento está aberto: volta à lista antes de abrir outro
+  const open = async (key) => { if (!(await item(key).isVisible())) await page.click('#btn-voltar'); await item(key).click(); };
+  // limpa o aviso anterior antes de agir (o texto do aviso antigo ficaria na tela e confundiria a espera)
+  const press = async (name, re) => {
+    await page.evaluate(() => { document.getElementById('toast').textContent = ''; });
+    await act(page, name).click();
+    await page.waitForFunction((s) => new RegExp(s).test(document.getElementById('toast').textContent), re);
+  };
+  const pubFind = async (key) => (await publicList()).others.concat((await publicList()).featured).find((x) => x.name === courseName(courseCase(key)));
+
+  // a lista mostra o curso/evento de cada envio
+  for (const c of COURSE_CASES) {
+    assert.equal(await item(c.key).locator('.adm-item__course').innerText(), c.detail ? `${c.label}: ${c.detail}` : c.label, c.key);
+  }
+  await page.screenshot({ path: SHOTS + 'admin-lista-curso-Pixel7.png', fullPage: true });
+
+  // ---- "Mais de um": a lista só é pública se a administração autorizar ----
+  await open('varios');
+  assert.equal(await page.locator('#ed-course').inputValue(), 'varios');
+  assert.equal(await page.locator('#ed-course-detail').inputValue(), courseCase('varios').detail);
+  assert.equal(await page.locator('#ed-course-pub').isChecked(), false);
+  assert.match(await page.locator('.adm-course-preview').innerText(), /Aparecerá no site como: Participante de múltiplas formações/);
+  assert.match(await page.locator('.adm-private').innerText(), /Curso ou evento informado pelo participante[\s\S]*Mais de um curso ou evento: Weekend Pass e Imersão/);
+  for (const dd of await page.locator('.adm-private dd').all()) assert.ok((await dd.evaluate((e) => e.getBoundingClientRect().width)) > 150, 'valores dos dados privados legíveis no celular');
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true, 'painel sem rolagem horizontal no celular');
+  await page.screenshot({ path: SHOTS + 'admin-editor-curso-varios-Pixel7.png', fullPage: true });
+  assert.equal(await pubFind('varios'), undefined, 'pendente: invisível');
+  await press('Aprovar e publicar', 'Aprovado e publicado');
+  let pv = await pubFind('varios');
+  assert.equal(pv.course, 'Participante de múltiplas formações');
+  assert.ok(!JSON.stringify(await publicList()).includes('Weekend Pass e Imersão'), 'lista de cursos não vaza sem autorização');
+  await page.check('#ed-course-pub');
+  assert.match(await page.locator('.adm-course-preview').innerText(), /Participante de: Weekend Pass e Imersão em Gerenciamento de Crise/);
+  await press('Salvar alterações', 'Alterações salvas');
+  assert.equal((await pubFind('varios')).course, courseCase('varios').pubList);
+  assert.equal((await rows("select course_detail_public p from testimonials where author_name='Participante varios'"))[0].p, true);
+
+  // ---- "Outro": nome informado é exibido após aprovação; administração pode corrigir a grafia ----
+  await open('outro');
+  assert.equal(await page.locator('#ed-course-pub').isVisible(), false, 'autorização de lista só existe em "varios"');
+  await page.fill('#ed-course-detail', '');
+  await act(page, 'Salvar alterações').click();
+  assert.match(await page.locator('.adm-msg').innerText(), /Informe o nome do curso ou evento/);
+  assert.equal((await rows("select course_detail d from testimonials where author_name='Participante outro'"))[0].d, courseCase('outro').detail, 'nada foi salvo');
+  await page.fill('#ed-course-detail', 'Formação em ABA');
+  await press('Aprovar e publicar', 'Aprovado e publicado');   // corrige e publica numa só ação
+  assert.equal((await pubFind('outro')).course, 'Participante de: Formação em ABA');
+  const [o] = await rows("select course_detail, course_detail_original, body, original_body from testimonials where author_name='Participante outro'");
+  assert.deepEqual([o.course_detail, o.course_detail_original], ['Formação em ABA', courseCase('outro').detail], 'o informado originalmente é preservado');
+  assert.equal(o.body, o.original_body, 'relato não foi alterado');
+  assert.match(await page.locator('.adm-private').innerText(), /Curso ou evento informado pelo participante[\s\S]*Formação em Análise do Comportamento Aplicada/);
+
+  // ---- corrige a opção antes de publicar (A.T. na Prática → Imersão), sem mexer no relato ----
+  await open('at_pratica');
+  await page.selectOption('#ed-course', 'imersao_crise');
+  assert.match(await page.locator('.adm-course-preview').innerText(), /Participante da Imersão em Gerenciamento de Crise/);
+  await press('Aprovar e publicar', 'Aprovado e publicado');
+  assert.equal((await pubFind('at_pratica')).course, 'Participante da Imersão em Gerenciamento de Crise');
+  const [a] = await rows("select course_key, course_key_original, body, original_body from testimonials where author_name='Participante at_pratica'");
+  assert.deepEqual([a.course_key, a.course_key_original], ['imersao_crise', 'at_pratica']); assert.equal(a.body, a.original_body);
+  await page.waitForSelector('.adm-history li');
+  assert.match(await page.locator('.adm-history').innerText(), /Curso ou evento editado/);
+  assert.match(await page.locator('.adm-private').innerText(), /Curso ou evento informado pelo participante[\s\S]*A\.T\. na Prática/);
+
+  // ---- "Mais de um" → opção padrão: o complemento e a autorização da lista são descartados ----
+  await open('varios');
+  await page.selectOption('#ed-course', 'masterclass');
+  assert.equal(await page.locator('#ed-course-detail').isVisible(), false);
+  await press('Salvar alterações', 'Alterações salvas');
+  assert.equal((await pubFind('varios')).course, 'Participante da Masterclass — Do Comportamento à Aprendizagem');
+  assert.deepEqual((await rows("select course_detail, course_detail_public p, course_detail_original from testimonials where author_name='Participante varios'"))[0], { course_detail: null, p: false, course_detail_original: courseCase('varios').detail });
+  await open('varios');
+  await page.selectOption('#ed-course', 'varios');           // volta; o complemento precisa ser informado de novo
+  await page.fill('#ed-course-detail', 'Weekend Pass e Imersão em Gerenciamento de Crise');
+  await press('Salvar alterações', 'Alterações salvas');
+  assert.equal((await pubFind('varios')).course, 'Participante de múltiplas formações', 'autorização de lista não é reaproveitada');
+
+  // ---- persistência: recarrega o painel ----
+  await page.reload(); await page.waitForSelector('#panel-view:not([hidden])');
+  await page.getByRole('button', { name: /Todos/ }).click();
+  await open('outro');
+  assert.equal(await page.locator('#ed-course').inputValue(), 'outro'); assert.equal(await page.locator('#ed-course-detail').inputValue(), 'Formação em ABA');
+  await open('at_pratica'); assert.equal(await page.locator('#ed-course').inputValue(), 'imersao_crise');
+  assert.equal(await item('at_pratica').locator('.adm-item__course').innerText(), 'Imersão em Gerenciamento de Crise');
+  await page.screenshot({ path: SHOTS + 'admin-editor-curso-corrigido-Pixel7.png', fullPage: true });
+
+  // ---- permanecem pendentes (e invisíveis): masterclass, weekend_pass, imersao_crise ----
+  const pubAll = JSON.stringify(await publicList());
+  for (const k of ['masterclass', 'weekend_pass', 'imersao_crise']) assert.ok(!pubAll.includes(courseName(courseCase(k))), k + ' pendente não aparece');
+  // destaques preservados
+  assert.deepEqual((await publicList()).featured.map((x) => x.name), feat0, 'os 5 destaques continuam iguais');
+  assert.deepEqual(await page.$$eval('.feat-item__name', (e) => e.map((x) => x.textContent)), feat0);
+  await page.context().close();
+});
+
+test('21. Site público: curso/evento aparece junto ao depoimento; antigos não ganham curso; tudo persiste após reiniciar o servidor', async () => {
+  const feat0 = (await publicList()).featured.map((x) => x.name);
+  const expected = {
+    'Curso outro': 'Participante de: Formação em ABA',
+    'Curso at_pratica': 'Participante da Imersão em Gerenciamento de Crise',
+    'Curso varios': 'Participante de múltiplas formações',
+  };
+  const check = async (label) => {
+    const site = await newPage();
+    await site.goto(origin + '/'); await site.locator('#depoimentos').scrollIntoViewIfNeeded(); await site.waitForSelector('#dep-destaques:not([hidden])');
+    assert.deepEqual(await site.$$eval('#dep-destaques .testi__name', (e) => e.map((x) => x.textContent)), feat0, label + ': destaques');
+    await site.getByRole('button', { name: /Ver todos os depoimentos|Mostrar menos/ }).click();
+    for (const [name, text] of Object.entries(expected)) {
+      const card = site.locator('#dep-todos .testi__card', { has: site.locator('.testi__name', { hasText: new RegExp('^' + name + '$') }) });
+      assert.equal(await card.locator('.testi__course').innerText(), text, `${label}: ${name}`);
+    }
+    // depoimento antigo (sem curso confirmado): nenhuma identificação de curso foi inventada
+    const legacy = site.locator('#dep-todos .testi__card', { hasText: 'texto perigoso' });
+    assert.equal(await legacy.count(), 1); assert.equal(await legacy.locator('.testi__course').count(), 0);
+    // pendentes não aparecem
+    const html = await site.content();
+    for (const k of ['Curso masterclass', 'Curso weekend_pass', 'Curso imersao_crise']) assert.ok(!html.includes(k), `${label}: ${k}`);
+    await site.screenshot({ path: SHOTS + `landing-cursos-${label}.png`, clip: await site.locator('#depoimentos').boundingBox() });
+    await site.context().close();
+  };
+  await check('antes');
+
+  await server.close();                                   // "reinicia": novo processo de banco sobre o mesmo disco
+  server = await startServer({ dataDir: TMP + 'pgdata', files });
+  origin = server.origin;
+  await check('depois');
+  const [r] = await rows("select course_key, course_detail, course_key_original, course_detail_original from testimonials where author_name='Participante outro'");
+  assert.deepEqual(r, { course_key: 'outro', course_detail: 'Formação em ABA', course_key_original: 'outro', course_detail_original: courseCase('outro').detail });
+  // a API pública devolve só campos autorizados (o curso já vem pronto; nada do banco sobra)
+  const pub = await publicList();
+  for (const x of pub.featured.concat(pub.others)) assert.deepEqual(Object.keys(x).sort(), ['cohort', 'course', 'date', 'name', 'photo_url', 'profession', 'text']);
+  assert.ok(!/course_|Participante varios|Weekend Pass e Imersão/.test(JSON.stringify(pub)));
+});
+test('22. Nenhum erro de console / violação de CSP durante os testes', async () => {
   const relevant = consoleErrors.filter((e) => !/Failed to load resource: the server responded with a status of (403|400|409|429|404)/.test(e));
   assert.deepEqual(relevant, []);
 });

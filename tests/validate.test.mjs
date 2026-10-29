@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import sharp from 'sharp';
-import { detectImage, checkPhoto, validateSubmission, makeDisplayName, CONSENT_VERSION } from '../supabase/functions/testimonials/validate.ts';
+import { detectImage, checkPhoto, validateSubmission, makeDisplayName, publicCourseLabel, CONSENT_VERSION, COURSES, COURSE_KEYS } from '../supabase/functions/testimonials/validate.ts';
 
 const img = (w, h, fmt, opts = {}) => sharp({ create: { width: w, height: h, channels: 3, background: '#336699' } })[fmt](opts).toBuffer().then((b) => new Uint8Array(b));
 
@@ -51,6 +51,7 @@ test('limites de tamanho e dimensões', async () => {
 const good = () => ({
   author_name: 'Maria Souza Lima', display_choice: 'first_initial', custom_name: '', profession: 'Psicopedagoga', cohort: 'Turma 1',
   contact: 'maria@exemplo.com', body: 'A masterclass foi muito clara e me ajudou a organizar minha prática com as crianças.',
+  course: 'masterclass', course_detail: '',
   consent_own: 'true', consent_publication: 'true', photo_consent: 'false', consent_version: CONSENT_VERSION, website: '', elapsed: '45000',
 });
 
@@ -108,6 +109,51 @@ test('validações de texto: tamanho, XSS, links, contato', () => {
   assert.deepEqual(validateSubmission({ ...good(), body: 'Adorei a masterclass, aprendi muito sobre comportamento e função <3 obrigada!' }, false).errors, {});
   // telefone aceito
   assert.deepEqual(validateSubmission({ ...good(), contact: '(11) 91234-5678' }, false).errors, {});
+});
+
+test('curso/evento: opções aceitas, obrigatoriedade e complementos (validação no servidor)', () => {
+  assert.equal(CONSENT_VERSION, 'v2-2026-10');
+  assert.deepEqual(COURSE_KEYS, ['masterclass', 'at_pratica', 'weekend_pass', 'imersao_crise', 'outro', 'varios']);
+  for (const key of ['masterclass', 'at_pratica', 'weekend_pass', 'imersao_crise']) {
+    const r = validateSubmission({ ...good(), course: key, course_detail: 'ignorado' }, false);
+    assert.deepEqual(r.errors, {}, key); assert.equal(r.value.course_key, key); assert.equal(r.value.course_detail, null, 'complemento ignorado nas opções padrão');
+  }
+  const o = validateSubmission({ ...good(), course: 'outro', course_detail: '  Curso   de ABA ' }, false);
+  assert.deepEqual(o.errors, {}); assert.equal(o.value.course_detail, 'Curso de ABA');
+  const v = validateSubmission({ ...good(), course: 'varios', course_detail: 'Weekend Pass e A.T. na Prática' }, false);
+  assert.deepEqual(v.errors, {}); assert.equal(v.value.course_detail, 'Weekend Pass e A.T. na Prática');
+
+  const err = (patch, field) => assert.ok(validateSubmission({ ...good(), ...patch }, false).errors[field], `${field} ← ${JSON.stringify(patch)}`);
+  err({ course: '' }, 'course');
+  err({ course: undefined }, 'course');
+  err({ course: 'curso_inventado' }, 'course');
+  err({ course: '<script>' }, 'course');
+  err({ course: 'outro', course_detail: '' }, 'course_detail');
+  err({ course: 'outro', course_detail: 'x' }, 'course_detail');
+  err({ course: 'outro', course_detail: 'x'.repeat(121) }, 'course_detail');
+  err({ course: 'varios', course_detail: '' }, 'course_detail');
+  err({ course: 'varios', course_detail: 'y'.repeat(201) }, 'course_detail');
+  err({ course: 'outro', course_detail: '<b>Curso</b>' }, 'course_detail');
+  err({ course: 'varios', course_detail: 'veja http://spam.example' }, 'course_detail');
+  assert.equal(validateSubmission({ ...good(), course: 'outro', course_detail: 'y'.repeat(120) }, false).errors.course_detail, undefined);
+  assert.match(validateSubmission({ ...good(), consent_own: 'false' }, false).errors.consent_own, /experiência real/);
+});
+
+test('curso/evento: identificação pública montada no servidor', () => {
+  assert.equal(publicCourseLabel('masterclass'), 'Participante da Masterclass — Do Comportamento à Aprendizagem');
+  assert.equal(publicCourseLabel('at_pratica'), 'Participante do A.T. na Prática');
+  assert.equal(publicCourseLabel('weekend_pass'), 'Participante do Weekend Pass');
+  assert.equal(publicCourseLabel('imersao_crise'), 'Participante da Imersão em Gerenciamento de Crise');
+  assert.equal(publicCourseLabel('outro', 'Curso de ABA'), 'Participante de: Curso de ABA');
+  assert.equal(publicCourseLabel('varios', 'Weekend Pass e A.T.', false), 'Participante de múltiplas formações');
+  assert.equal(publicCourseLabel('varios', 'Weekend Pass e A.T.', true), 'Participante de: Weekend Pass e A.T.');
+  assert.equal(publicCourseLabel('varios', null, true), 'Participante de múltiplas formações');
+  // sem informação (depoimentos antigos) ou valor desconhecido: nada é inventado
+  assert.equal(publicCourseLabel(null), null);
+  assert.equal(publicCourseLabel(undefined, 'x', true), null);
+  assert.equal(publicCourseLabel('inventado', 'x', true), null);
+  assert.equal(publicCourseLabel('outro', null), null);
+  assert.equal(COURSES.outro, 'Outro curso ou evento'); assert.equal(COURSES.varios, 'Mais de um curso ou evento');
 });
 
 test('antiabuso: campo-isca e preenchimento instantâneo são descartados como bot', () => {

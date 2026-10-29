@@ -101,6 +101,8 @@
     who.appendChild(el('strong', 'testi__name', item.name));
     var meta = [item.profession, item.cohort].filter(Boolean).join(' · ');
     if (meta) who.appendChild(el('span', 'testi__meta', meta));
+    // Curso ou evento a que o depoimento se refere (texto montado e autorizado pelo servidor; ausente em depoimentos antigos)
+    if (typeof item.course === 'string' && item.course) who.appendChild(el('span', 'testi__course', item.course));
     var when = fmtDate(item.date);
     if (when) {
       var t = el('time', 'testi__date', when);

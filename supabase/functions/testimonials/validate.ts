@@ -1,13 +1,45 @@
 // Lógica de validação PURA (sem dependências do Deno/Supabase) para poder ser testada em Node.
 // Toda validação do formulário é refeita aqui, no servidor: o navegador nunca é confiável.
 
-export const CONSENT_VERSION = 'v1-2026-10';
+export const CONSENT_VERSION = 'v2-2026-10';
 export const MAX_PHOTO_BYTES = 5 * 1024 * 1024; // 5 MB
 export const MIN_PHOTO_SIDE = 200;
 export const MAX_PHOTO_SIDE = 8000;
 export const MAX_PHOTO_PIXELS = 40_000_000;
 export const BODY_MIN = 30;
 export const BODY_MAX = 1000;
+
+// ---------- Curso ou evento ----------
+// Mantenha estes nomes iguais aos do formulário (enviar-depoimento/index.html) e do painel.
+export const COURSES = {
+  masterclass: 'Masterclass — Do Comportamento à Aprendizagem',
+  at_pratica: 'A.T. na Prática',
+  weekend_pass: 'Weekend Pass',
+  imersao_crise: 'Imersão em Gerenciamento de Crise',
+  outro: 'Outro curso ou evento',
+  varios: 'Mais de um curso ou evento',
+} as const;
+export type CourseKey = keyof typeof COURSES;
+export const COURSE_KEYS = Object.keys(COURSES) as CourseKey[];
+export const COURSE_NEEDS_DETAIL: CourseKey[] = ['outro', 'varios'];
+export const COURSE_OTHER_MAX = 120;
+export const COURSE_MULTI_MAX = 200;
+
+const PUBLIC_COURSE_LABEL: Record<string, string> = {
+  masterclass: 'Participante da Masterclass — Do Comportamento à Aprendizagem',
+  at_pratica: 'Participante do A.T. na Prática',
+  weekend_pass: 'Participante do Weekend Pass',
+  imersao_crise: 'Participante da Imersão em Gerenciamento de Crise',
+};
+
+/** Identificação PÚBLICA do curso/evento, decidida só no servidor. Retorna null quando não há o que exibir (depoimentos antigos, sem informação). */
+export function publicCourseLabel(key: string | null | undefined, detail: string | null | undefined, detailPublic: boolean | null | undefined): string | null {
+  if (!key) return null;
+  if (PUBLIC_COURSE_LABEL[key]) return PUBLIC_COURSE_LABEL[key];
+  if (key === 'outro') return detail ? `Participante de: ${detail}` : null;
+  if (key === 'varios') return detailPublic && detail ? `Participante de: ${detail}` : 'Participante de múltiplas formações';
+  return null;
+}
 
 export interface ImageInfo { type: 'image/jpeg' | 'image/png' | 'image/webp'; ext: 'jpg' | 'png' | 'webp'; width: number; height: number }
 
@@ -107,12 +139,14 @@ export interface Submission {
   author_name: string; author_contact: string | null;
   display_choice: string; display_name: string;
   profession: string | null; cohort: string | null;
+  course_key: CourseKey; course_detail: string | null;
   body: string; photo_consent: boolean;
 }
 export type FieldErrors = Record<string, string>;
 
 export interface RawFields {
   author_name?: string; display_choice?: string; custom_name?: string; profession?: string; cohort?: string; contact?: string;
+  course?: string; course_detail?: string;
   body?: string; consent_own?: string; consent_publication?: string; photo_consent?: string; consent_version?: string;
   website?: string; elapsed?: string;
 }
@@ -148,6 +182,24 @@ export function validateSubmission(f: RawFields, hasPhoto: boolean): { bot: bool
   if (cohort.length > 80) errors.cohort = 'Use no máximo 80 caracteres.';
   else if (cohort && (!noBad(cohort) || LINK_LIKE.test(cohort))) errors.cohort = 'Esse campo contém caracteres ou links não permitidos.';
 
+  // Curso ou evento (obrigatório; "outro" e "varios" exigem o texto complementar)
+  const course = cleanLine(f.course) as CourseKey;
+  const courseDetailRaw = cleanLine(f.course_detail);
+  let courseDetail: string | null = null;
+  if (!course) errors.course = 'Selecione o curso ou evento que você realizou.';
+  else if (!COURSE_KEYS.includes(course)) errors.course = 'Selecione uma das opções da lista.';
+  else if (COURSE_NEEDS_DETAIL.includes(course)) {
+    const max = course === 'outro' ? COURSE_OTHER_MAX : COURSE_MULTI_MAX;
+    if (courseDetailRaw.length < 2) {
+      errors.course_detail = course === 'outro' ? 'Informe o nome do curso ou evento.' : 'Informe quais cursos ou eventos você deseja mencionar.';
+    } else if (courseDetailRaw.length > max) {
+      errors.course_detail = `Use no máximo ${max} caracteres.`;
+    } else if (!noBad(courseDetailRaw) || LINK_LIKE.test(courseDetailRaw) || /[<>{}\[\]\\]/.test(courseDetailRaw)) {
+      errors.course_detail = 'Esse campo contém caracteres ou links não permitidos.';
+    } else courseDetail = courseDetailRaw;
+  }
+  // nas demais opções o texto complementar é ignorado (nunca é gravado)
+
   const contact = cleanLine(f.contact);
   if (contact) {
     const looksEmail = /^[^<>\s@]+@[^<>\s@]+\.[^<>\s@]{2,}$/.test(contact);
@@ -162,7 +214,7 @@ export function validateSubmission(f: RawFields, hasPhoto: boolean): { bot: bool
   else if (!noBad(body)) errors.body = 'O texto contém caracteres não permitidos.';
   else if (LINK_LIKE.test(body)) errors.body = 'Por segurança, não aceitamos links no depoimento.';
 
-  if (f.consent_own !== 'true') errors.consent_own = 'Confirme que o relato é sobre a sua própria experiência.';
+  if (f.consent_own !== 'true') errors.consent_own = 'Confirme que o depoimento relata uma experiência real que você teve em um curso, evento ou formação da Tâmara San’Galo.';
   if (f.consent_publication !== 'true') errors.consent_publication = 'Para enviar, é necessário autorizar a análise e a possível publicação do texto.';
   if (f.consent_version !== CONSENT_VERSION) errors.consent_version = 'A página está desatualizada. Recarregue e tente novamente.';
 
@@ -186,6 +238,8 @@ export function validateSubmission(f: RawFields, hasPhoto: boolean): { bot: bool
       display_name: displayName,
       profession: profession || null,
       cohort: cohort || null,
+      course_key: course,
+      course_detail: courseDetail,
       body,
       photo_consent: hasPhoto && photoConsent,
     },
