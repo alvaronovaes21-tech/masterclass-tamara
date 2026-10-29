@@ -91,9 +91,20 @@ test('1. Landing (desktop): primeira tela em 2 colunas, textos, vídeo e botões
   assert.ok(!dl.some((x) => x[0] === 'event' && /purchase|compra|conversion/i.test(String(x[1]))), 'clique NÃO pode virar compra/conversão');
   await popup.close();
 
-  // tags de rastreamento não duplicadas
+  // tags de rastreamento não duplicadas; só a tag atual da conta
   assert.equal(await page.locator('script[src*="googletagmanager"]').count(), 1);
   assert.equal(await page.locator('script[src*="gtag-init"]').count(), 1);
+  assert.match(await page.locator('script[src*="googletagmanager/gtag/js"]').getAttribute('src'), /[?&]id=AW-18537932244(?:&|$)/);
+  const cfg = dl.find((x) => x[0] === 'config');
+  assert.ok(cfg, 'gtag config');
+  assert.equal(cfg[1], 'AW-18537932244');
+  assert.ok(!dl.some((x) => String(x[1] || '').includes('AW-736166788')), 'tag antiga não pode permanecer no dataLayer');
+  for (const path of ['/privacidade.html', '/termos.html', '/404.html']) {
+    const html = await (await page.request.get(origin + path)).text();
+    assert.match(html, /gtag\/js\?id=AW-18537932244/);
+    assert.equal(html.includes('AW-736166788'), false, path + ': tag antiga');
+    assert.equal((html.match(/googletagmanager\.com\/gtag\/js/g) || []).length, 1, path + ': um gtag/js');
+  }
 
   // Instagram: nova aba, atributos de segurança, ícone SVG inline (sem dependência)
   const ig = page.locator('#autora a.link-ig');
