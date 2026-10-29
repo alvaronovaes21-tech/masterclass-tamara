@@ -5,3 +5,8 @@ tests/screenshots/
 .env.*
 supabase/.temp/
 supabase/.branches/
+
+# arquivos com senhas/segredos nunca devem ir ao GitHub
+*.rtf
+*senha*
+*password*
