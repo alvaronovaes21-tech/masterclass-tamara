@@ -11,7 +11,7 @@
  * Passo a passo completo: docs/DEPOIMENTOS.md
  */
 window.SITE_CONFIG = {
-  supabaseUrl: '',
-  supabaseAnonKey: '',
+  supabaseUrl: 'https://lyuhgijluanqfzatvadr.supabase.co',
+  supabaseAnonKey: 'sb_publishable_uzffJaroW0PQto4qreQkcg_2Jasftl-',
   turnstileSiteKey: ''
 };
