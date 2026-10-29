@@ -72,6 +72,17 @@
     }
   }
 
+  // ---------- Medição: cliques nos botões que levam ao checkout da Hotmart ----------
+  // Evento separado e SEM dados pessoais. Isto NÃO é uma compra: a compra efetiva continua
+  // sendo medida pela integração já existente (Hotmart/Google), não por este clique.
+  document.addEventListener('click', function (ev) {
+    var a = ev.target && ev.target.closest ? ev.target.closest('a[data-cta]') : null;
+    if (!a || typeof window.gtag !== 'function') return;
+    try {
+      window.gtag('event', 'clique_checkout_hotmart', { cta_local: a.getAttribute('data-cta') || 'desconhecido' });
+    } catch (e) { /* medição nunca pode atrapalhar a navegação */ }
+  });
+
   // ---------- Animações de entrada ----------
   var items = document.querySelectorAll('.reveal');
   if ('IntersectionObserver' in window) {

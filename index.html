@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <!-- Segurança: só permite carregar recursos do próprio site (+ vídeo do YouTube em modo privacidade) -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://www.googletagmanager.com; style-src 'self'; img-src 'self' data: https://i.ytimg.com https://www.googletagmanager.com https://*.google.com https://*.g.doubleclick.net; font-src 'self'; connect-src https://*.googletagmanager.com https://*.google-analytics.com https://*.g.doubleclick.net https://*.google.com; frame-src https://www.youtube-nocookie.com https://td.doubleclick.net https://www.googletagmanager.com; media-src 'none'; manifest-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; upgrade-insecure-requests">
+  <!-- Segurança: só permite carregar recursos do próprio site (+ vídeo do YouTube em modo privacidade + Supabase para os depoimentos) -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://www.googletagmanager.com; style-src 'self'; img-src 'self' data: https://i.ytimg.com https://*.supabase.co https://www.googletagmanager.com https://*.google.com https://*.g.doubleclick.net; font-src 'self'; connect-src 'self' https://*.supabase.co https://*.googletagmanager.com https://*.google-analytics.com https://*.g.doubleclick.net https://*.google.com; frame-src https://www.youtube-nocookie.com https://td.doubleclick.net https://www.googletagmanager.com; media-src 'none'; manifest-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; upgrade-insecure-requests">
 
   <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=AW-736166788"></script>
@@ -13,19 +13,21 @@
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <meta name="format-detection" content="telephone=no">
 
-  <title>Masterclass: Do Comportamento à Aprendizagem | Tâmara San'Galo Novaes</title>
-  <meta name="description" content="Aprenda as 4 funções do comportamento e um protocolo prático de manejo de conduta escolar e clínica, baseado em Análise do Comportamento. Masterclass de 2 horas.">
+  <title>Masterclass Do Comportamento à Aprendizagem | Tâmara San'Galo Novaes</title>
+  <meta name="description" content="Masterclass online de 2 horas: aprenda a identificar as 4 funções do comportamento e conheça estratégias práticas para situações desafiadoras na escola e na clínica. Investimento único de R$ 22.">
   <meta name="theme-color" content="#0f1f3d">
   <link rel="canonical" href="https://alvaronovaes21-tech.github.io/masterclass-tamara/">
 
   <meta property="og:type" content="website">
   <meta property="og:locale" content="pt_BR">
-  <meta property="og:title" content="Masterclass: Do Comportamento à Aprendizagem">
-  <meta property="og:description" content="Compreenda as 4 funções do comportamento e aplique ferramentas práticas na escola e na clínica.">
+  <meta property="og:title" content="Masterclass Do Comportamento à Aprendizagem">
+  <meta property="og:description" content="Aprenda a identificar as 4 funções do comportamento e conheça estratégias práticas para lidar com situações desafiadoras na escola e na clínica.">
 
   <link rel="icon" type="image/svg+xml" href="assets/img/favicon.svg">
   <link rel="stylesheet" href="assets/css/style.css">
+  <script src="assets/js/site-config.js" defer></script>
   <script src="assets/js/main.js" defer></script>
+  <script src="assets/js/depoimentos.js" defer></script>
 </head>
 <body>
   <a class="skip" href="#conteudo">Pular para o conteúdo</a>
@@ -42,101 +44,92 @@
         <span>Tâmara San'Galo</span>
       </a>
       <nav class="nav" aria-label="Seções">
-        <a href="#video">Vídeo</a>
         <a href="#conteudo">Conteúdo</a>
+        <a href="#depoimentos">Depoimentos</a>
         <a href="#autora">A autora</a>
         <a href="#duvidas">Dúvidas</a>
       </nav>
-      <a class="btn btn--sm" href="https://pay.hotmart.com/H107524355I?bid=1792577203766" target="_blank" rel="noopener sponsored">Quero participar</a>
+      <a class="btn btn--sm" href="https://pay.hotmart.com/H107524355I?bid=1792577203766" target="_blank" rel="noopener sponsored" data-cta="topbar">Quero participar</a>
     </div>
   </header>
 
   <main>
-    <!-- ===== Hero ===== -->
+    <!-- ===== Primeira tela: proposta de valor + vídeo da Tâmara ===== -->
     <section class="hero" id="inicio">
       <div class="hero__glow" aria-hidden="true"></div>
       <div class="wrap hero__grid">
-        <div class="hero__text reveal">
-          <p class="eyebrow">Masterclass exclusiva · 2 horas</p>
-          <h1>A criança não aprende <em>porque está desregulada.</em></h1>
-          <p class="lead">Descubra o protocolo prático de manejo de conduta escolar e clínica, baseado em Análise do Comportamento, e aprenda a entender as <strong>4 funções comportamentais</strong> por trás de cada atitude desafiadora.</p>
+
+        <div class="hero__main">
+          <p class="eyebrow">Masterclass online · 2 horas</p>
+          <h1>Por trás de cada comportamento, existe algo que <em>precisa ser compreendido.</em></h1>
+          <p class="lead">Aprenda a identificar as <strong>4 funções do comportamento</strong> e conheça estratégias práticas para lidar com situações desafiadoras na escola e na clínica.</p>
 
           <div class="hero__cta">
-            <a class="btn btn--lg" href="https://pay.hotmart.com/H107524355I?bid=1792577203766" target="_blank" rel="noopener sponsored">
-              Quero acessar a Masterclass
+            <a class="btn btn--lg" href="https://pay.hotmart.com/H107524355I?bid=1792577203766" target="_blank" rel="noopener sponsored" data-cta="hero">
+              Quero acessar a Masterclass por R$&nbsp;22
               <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </a>
             <p class="price"><span>Investimento único</span> <strong>R$&nbsp;22,00</strong></p>
           </div>
+        </div>
 
-          <ul class="trust" aria-label="Garantias de segurança">
-            <li><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 3 5 6v6c0 4.5 3 7.7 7 9 4-1.300 7-4.500 7-9V6l-7-3Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="m9 12 2 2 4-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Pagamento seguro na Hotmart</li>
+        <!--
+          VÍDEO DE APRESENTAÇÃO DA TÂMARA
+          Para trocar: coloque o código do vídeo do YouTube (11 caracteres) em data-video-id.
+          Exemplo: https://www.youtube.com/watch?v=AbC123xyz_0  ->  data-video-id="AbC123xyz_0"
+          Se o vídeo ficar vazio, aparece o aviso "Vídeo em breve" (a página não quebra).
+          O player só é carregado quando a pessoa clica (não pesa no carregamento inicial).
+        -->
+        <div class="hero__media" id="video">
+          <div class="video video--vertical" id="video-box" data-video-id="A9B94ZTYWag" data-video-title="Apresentação da Masterclass Do Comportamento à Aprendizagem, por Tâmara San'Galo Novaes">
+            <div class="video__placeholder" id="video-placeholder">
+              <svg viewBox="0 0 64 64" width="64" height="64" aria-hidden="true"><circle cx="32" cy="32" r="30" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M26 20v24l20-12-20-12Z" fill="currentColor"/></svg>
+              <p>Vídeo de apresentação em breve</p>
+            </div>
+          </div>
+          <p class="hero__caption">Um convite da própria Tâmara para você conhecer a Masterclass.</p>
+        </div>
+
+        <div class="hero__details">
+          <ul class="facts" aria-label="Informações da Masterclass">
+            <li><strong>Masterclass online</strong></li>
+            <li><strong>2 horas</strong> de conteúdo</li>
+            <li>Investimento único de <strong>R$&nbsp;22,00</strong></li>
+            <li>Acesso conforme as condições informadas na oferta</li>
+          </ul>
+          <p class="hero__for">Para <strong>profissionais e estudantes da saúde e da educação</strong>, e também para famílias interessadas em compreender melhor o comportamento.</p>
+          <ul class="check">
+            <li><span>Protocolo prático</span> de manejo de conduta</li>
+            <li><span>4 funções</span> do comportamento, explicadas</li>
+            <li><span>Ferramentas visuais</span> para apoiar a prática</li>
+            <li><span>Aplicação</span> na escola e na clínica</li>
+          </ul>
+          <ul class="trust" aria-label="Segurança da compra">
+            <li><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 3 5 6v6c0 4.5 3 7.7 7 9 4-1.3 7-4.5 7-9V6l-7-3Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="m9 12 2 2 4-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Pagamento seguro na Hotmart</li>
             <li><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>Conexão criptografada</li>
-            <li><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 7v5l3 2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>Acesso imediato</li>
           </ul>
         </div>
 
-        <aside class="hero__card reveal" aria-label="Resumo da Masterclass">
-          <div class="card-glass">
-            <p class="card-glass__tag">O que você leva</p>
-            <ul class="check">
-              <li><span>Protocolo prático</span> de manejo de conduta</li>
-              <li><span>4 funções</span> do comportamento, explicadas</li>
-              <li><span>Ferramentas visuais</span> prontas para usar</li>
-              <li><span>Aplicação imediata</span> na escola e na clínica</li>
-            </ul>
-            <a class="btn btn--block" href="https://pay.hotmart.com/H107524355I?bid=1792577203766" target="_blank" rel="noopener sponsored">Garantir meu acesso</a>
-            <p class="card-glass__note">Você será direcionado ao ambiente seguro da Hotmart.</p>
-          </div>
-        </aside>
       </div>
     </section>
 
-    <!-- ===== Vídeo ===== -->
-    <section class="section section--video" id="video">
-      <div class="wrap wrap--narrow">
-        <header class="section__head reveal">
-          <p class="eyebrow eyebrow--dark">Assista antes de decidir</p>
-          <h2>Entenda em poucos minutos como funciona a Masterclass</h2>
-          <p class="sub">Um convite da própria Tâmara para você conhecer o método.</p>
-        </header>
-
-        <!--
-          COMO TROCAR O VÍDEO:
-          Coloque o código do seu vídeo do YouTube (11 caracteres) em data-video-id.
-          Exemplo: https://www.youtube.com/watch?v=AbC123xyz_0  ->  data-video-id="AbC123xyz_0"
-          Enquanto estiver vazio, aparece o aviso "Vídeo em breve".
-        -->
-        <div class="video video--vertical reveal" id="video-box" data-video-id="A9B94ZTYWag" data-video-title="Apresentação da Masterclass Do Comportamento à Aprendizagem">
-          <div class="video__placeholder" id="video-placeholder">
-            <svg viewBox="0 0 64 64" width="64" height="64" aria-hidden="true"><circle cx="32" cy="32" r="30" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M26 20v24l20-12-20-12Z" fill="currentColor"/></svg>
-            <p>Vídeo de apresentação em breve</p>
-          </div>
-        </div>
-
-        <p class="center reveal">
-          <a class="btn btn--lg" href="https://pay.hotmart.com/H107524355I?bid=1792577203766" target="_blank" rel="noopener sponsored">Quero acessar a Masterclass por R$&nbsp;22,00</a>
-        </p>
-      </div>
-    </section>
-
-    <!-- ===== Problema ===== -->
+    <!-- ===== Por que olhar para a função do comportamento ===== -->
     <section class="section section--soft" id="problema">
       <div class="wrap">
-        <header class="section__head reveal">
-          <p class="eyebrow eyebrow--dark">O problema</p>
-          <h2>Por que as abordagens tradicionais falham?</h2>
-          <p class="sub">Muitas vezes interpretamos mal o comportamento da criança. O problema raramente é falta de vontade.</p>
+        <header class="section__head">
+          <p class="eyebrow eyebrow--dark">Ponto de partida</p>
+          <h2>Entender o comportamento ajuda a orientar a intervenção</h2>
+          <p class="sub">Um mesmo comportamento pode ter explicações diferentes em cada criança e em cada contexto. Por isso, olhar para o que ele comunica é um passo importante.</p>
         </header>
 
         <div class="split">
           <article class="panel panel--alert reveal">
-            <h3>O ciclo da desregulação</h3>
-            <p>Quando a criança está emocionalmente desregulada, o cérebro entra em <strong>modo de defesa</strong>. Exigir aprendizado sem antes regular o comportamento gera apenas exaustão, resistência e crises severas.</p>
+            <h3>Quando só se reage ao que aparece</h3>
+            <p>Responder apenas ao comportamento, sem compreender a sua função, pode levar a intervenções pouco eficazes e a mais desgaste para a criança, a família e os profissionais. A <strong>desregulação emocional</strong> é um dos fatores que podem interferir na participação e na aprendizagem, mas não é a única explicação possível.</p>
           </article>
           <article class="panel panel--ok reveal">
-            <h3>A solução baseada na Análise do Comportamento</h3>
-            <p>Compreenda as <strong>4 funções comportamentais</strong> reais por trás de cada atitude e tenha em mãos ferramentas práticas para aplicar no ambiente escolar e clínico.</p>
+            <h3>Um olhar baseado na Análise do Comportamento</h3>
+            <p>Ao identificar as <strong>4 funções do comportamento</strong>, fica mais claro o que a situação pede: ajustar o ambiente, ensinar novas habilidades ou mudar a forma de responder. Você conhece ferramentas práticas para aplicar na escola e na clínica.</p>
           </article>
         </div>
       </div>
@@ -145,20 +138,20 @@
     <!-- ===== Conteúdo ===== -->
     <section class="section" id="conteudo">
       <div class="wrap">
-        <header class="section__head reveal">
+        <header class="section__head">
           <p class="eyebrow eyebrow--dark">Conteúdo</p>
-          <h2>O que você vai dominar em 2 horas</h2>
-          <p class="sub">Um direcionamento objetivo para transformar sua prática profissional e o cotidiano da criança.</p>
+          <h2>O que você vai ver em 2 horas</h2>
+          <p class="sub">Um direcionamento objetivo para qualificar a sua prática com crianças, na escola e na clínica.</p>
         </header>
 
         <div class="cards">
           <article class="card reveal">
             <div class="card__icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" width="28" height="28"><path d="M12 21s-7-4.500-9-9a5 5 0 0 1 9-3 5 5 0 0 1 9 3c-2 4.500-9 9-9 9Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+              <svg viewBox="0 0 24 24" width="28" height="28"><path d="M12 21s-7-4.5-9-9a5 5 0 0 1 9-3 5 5 0 0 1 9 3c-2 4.5-9 9-9 9Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
             </div>
             <span class="badge">Foco prático</span>
             <h3>Regulação emocional</h3>
-            <p>Entenda os gatilhos neurobiológicos da desregulação e como preparar o terreno para que a aprendizagem aconteça de fato.</p>
+            <p>Entenda como a desregulação emocional pode influenciar o comportamento e a participação, e como organizar o ambiente para favorecer a aprendizagem.</p>
           </article>
 
           <article class="card reveal">
@@ -166,8 +159,8 @@
               <svg viewBox="0 0 24 24" width="28" height="28"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 3v18M3 12h18" stroke="currentColor" stroke-width="1.8"/></svg>
             </div>
             <span class="badge">Protocolo de aplicação</span>
-            <h3>As 4 funções comportamentais</h3>
-            <p>Descubra o que a criança busca comunicar por meio de cada comportamento desafiador e aprenda a responder de forma assertiva.</p>
+            <h3>As 4 funções do comportamento</h3>
+            <p>Aprenda a identificar o que um comportamento desafiador pode estar comunicando e a orientar respostas mais adequadas a cada situação.</p>
           </article>
 
           <article class="card reveal">
@@ -175,13 +168,37 @@
               <svg viewBox="0 0 24 24" width="28" height="28"><rect x="4" y="4" width="16" height="16" rx="3" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 9h8M8 13h8M8 17h5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
             </div>
             <span class="badge">Pronto para usar</span>
-            <h3>Ferramentas visuais prontas</h3>
-            <p>Receba materiais visuais validados para uso imediato em sala de aula ou em atendimentos clínicos especializados.</p>
+            <h3>Ferramentas visuais</h3>
+            <p>Conheça materiais visuais práticos para apoiar o trabalho em sala de aula ou em atendimentos clínicos.</p>
           </article>
         </div>
 
-        <p class="center reveal">
-          <a class="btn btn--lg" href="https://pay.hotmart.com/H107524355I?bid=1792577203766" target="_blank" rel="noopener sponsored">Quero acessar agora</a>
+        <p class="center">
+          <a class="btn btn--lg" href="https://pay.hotmart.com/H107524355I?bid=1792577203766" target="_blank" rel="noopener sponsored" data-cta="conteudo">Quero acessar a Masterclass por R$&nbsp;22</a>
+        </p>
+      </div>
+    </section>
+
+    <!-- ===== Depoimentos (carregados do banco; só aprovados e publicados) ===== -->
+    <section class="section section--testi is-empty" id="depoimentos" aria-labelledby="dep-titulo">
+      <div class="wrap">
+        <header class="section__head">
+          <p class="eyebrow eyebrow--dark">Depoimentos</p>
+          <h2 id="dep-titulo">Quem já participou conta como foi a experiência</h2>
+          <p class="sub">Conheça as experiências de quem participou da Masterclass e compartilhou sua percepção sobre o conteúdo.</p>
+        </header>
+
+        <div id="dep-destaques" class="testi" role="list" tabindex="0" aria-label="Depoimentos em destaque" hidden></div>
+
+        <p class="center testi__more" id="dep-mais-wrap" hidden>
+          <button type="button" class="btn btn--ghost" id="dep-mais" aria-expanded="false" aria-controls="dep-todos">Ver todos os depoimentos</button>
+        </p>
+        <div id="dep-todos" class="testi testi--all" role="list" aria-label="Todos os depoimentos" hidden></div>
+
+        <p class="testi__empty" id="dep-vazio">Os depoimentos de quem participou aparecerão aqui. Se você já fez a Masterclass, <a href="enviar-depoimento/">compartilhe a sua experiência</a>.</p>
+
+        <p class="center testi__cta" id="dep-cta" hidden>
+          <a class="btn btn--lg" href="https://pay.hotmart.com/H107524355I?bid=1792577203766" target="_blank" rel="noopener sponsored" data-cta="depoimentos">Quero acessar a Masterclass por R$&nbsp;22</a>
         </p>
       </div>
     </section>
@@ -189,14 +206,15 @@
     <!-- ===== Para quem ===== -->
     <section class="section section--dark" id="publico">
       <div class="wrap">
-        <header class="section__head reveal">
+        <header class="section__head">
           <p class="eyebrow">Para quem é</p>
-          <h2>Esta Masterclass foi pensada para você que atua com crianças</h2>
+          <h2>Pensada para quem acompanha o desenvolvimento e a aprendizagem de crianças</h2>
         </header>
         <ul class="audience">
-          <li class="reveal"><strong>Educadores e professores</strong><span>que querem lidar com crises em sala de aula com mais segurança.</span></li>
+          <li class="reveal"><strong>Educadores e professores</strong><span>que querem lidar com situações desafiadoras em sala de aula com mais segurança.</span></li>
           <li class="reveal"><strong>Terapeutas e psicólogos</strong><span>que buscam um protocolo claro de manejo de conduta.</span></li>
           <li class="reveal"><strong>Psicopedagogos e profissionais de apoio</strong><span>que acompanham crianças típicas e atípicas.</span></li>
+          <li class="reveal"><strong>Estudantes da saúde e da educação</strong><span>que querem aprender a leitura funcional do comportamento.</span></li>
           <li class="reveal"><strong>Famílias interessadas</strong><span>em compreender o comportamento antes de corrigi-lo.</span></li>
         </ul>
       </div>
@@ -206,7 +224,10 @@
     <section class="section" id="autora">
       <div class="wrap author">
         <figure class="author__photo reveal">
-          <img src="assets/img/tamara.jpg" alt="Tâmara San'Galo Novaes, psicóloga e pedagoga" width="768" height="1024" loading="lazy" decoding="async">
+          <picture>
+            <source type="image/webp" srcset="assets/img/tamara-480.webp 480w, assets/img/tamara.webp 768w" sizes="(min-width: 860px) 340px, 300px">
+            <img src="assets/img/tamara.jpg" alt="Tâmara San'Galo Novaes, psicóloga e pedagoga, sorrindo" width="768" height="1024" loading="lazy" decoding="async">
+          </picture>
         </figure>
         <div class="author__text reveal">
           <p class="eyebrow eyebrow--dark">Quem ministra</p>
@@ -214,6 +235,12 @@
           <p class="author__role">Psicóloga e Pedagoga · Análise do Comportamento · Neuropsicologia · Psicopedagogia</p>
           <p>Reconhecida por sua atuação ética, humanizada e transformadora no desenvolvimento infantil, Tâmara tem mais de uma década de prática clínica e pedagógica. Tornou-se referência em decodificar o universo de crianças típicas e atípicas, construindo pontes onde antes existiam barreiras de aprendizagem e comunicação.</p>
           <p>Sua trajetória une o rigor da Neurociência e da Análise do Comportamento ao olhar sensível de quem vive o consultório e o chão da escola. Para ela, <em>nenhum comportamento desafiador é um capricho: é uma linguagem que precisa ser compreendida antes de ser corrigida.</em></p>
+          <p class="author__social">
+            <a class="link-ig" href="https://www.instagram.com/tamarasangalo.psicologa/" target="_blank" rel="noopener noreferrer" data-ext="instagram">
+              <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="4.2" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="17.2" cy="6.8" r="1.2" fill="currentColor"/></svg>
+              <span>Conheça mais do meu trabalho no Instagram<span class="sr-only"> (abre em nova aba)</span></span>
+            </a>
+          </p>
         </div>
       </div>
     </section>
@@ -221,18 +248,18 @@
     <!-- ===== FAQ ===== -->
     <section class="section section--soft" id="duvidas">
       <div class="wrap wrap--narrow">
-        <header class="section__head reveal">
+        <header class="section__head">
           <p class="eyebrow eyebrow--dark">Dúvidas frequentes</p>
           <h2>Ficou com alguma dúvida?</h2>
         </header>
-        <div class="faq reveal">
+        <div class="faq">
           <details>
             <summary>Como faço para comprar?</summary>
             <p>Clique em qualquer botão desta página. Você será levado ao ambiente oficial da Hotmart, onde escolhe a forma de pagamento e conclui a compra com segurança.</p>
           </details>
           <details>
             <summary>Meus dados de pagamento ficam neste site?</summary>
-            <p>Não. Este site não coleta dados pessoais nem de pagamento. Toda a compra é processada diretamente pela Hotmart.</p>
+            <p>Não. Toda a compra é processada diretamente pela Hotmart. Este site só recebe dados pessoais se você escolher, por vontade própria, enviar um depoimento (veja a <a href="privacidade.html">Política de Privacidade</a>).</p>
           </details>
           <details>
             <summary>Quanto tempo dura a Masterclass?</summary>
@@ -240,7 +267,7 @@
           </details>
           <details>
             <summary>Quando recebo o acesso?</summary>
-            <p>Após a confirmação do pagamento pela Hotmart, o acesso é liberado conforme as instruções enviadas ao seu e-mail.</p>
+            <p>Após a confirmação do pagamento pela Hotmart, o acesso é liberado conforme as condições e as instruções enviadas ao seu e-mail.</p>
           </details>
           <details>
             <summary>Posso pedir reembolso?</summary>
@@ -248,7 +275,11 @@
           </details>
           <details>
             <summary>Serve para quem não é da área?</summary>
-            <p>Sim. O conteúdo é voltado a educadores e terapeutas, mas famílias que desejam compreender melhor o comportamento infantil também podem aproveitar.</p>
+            <p>Sim. O conteúdo é voltado a profissionais e estudantes da saúde e da educação, mas famílias que desejam compreender melhor o comportamento infantil também podem aproveitar.</p>
+          </details>
+          <details>
+            <summary>Já fiz a Masterclass. Posso deixar meu depoimento?</summary>
+            <p>Pode, com prazer. Basta usar a <a href="enviar-depoimento/">página para enviar depoimento</a>. O relato passa por análise antes de qualquer publicação e a foto é opcional.</p>
           </details>
         </div>
       </div>
@@ -256,11 +287,11 @@
 
     <!-- ===== CTA final ===== -->
     <section class="final">
-      <div class="wrap final__in reveal">
+      <div class="wrap final__in">
         <h2>Comece hoje a enxergar o comportamento de outra forma</h2>
-        <p>Acesso imediato por um investimento único de <strong>R$&nbsp;22,00</strong>.</p>
-        <a class="btn btn--lg" href="https://pay.hotmart.com/H107524355I?bid=1792577203766" target="_blank" rel="noopener sponsored">Quero acessar a Masterclass</a>
-        <p class="final__note">Compra 100% segura, processada pela Hotmart.</p>
+        <p>Masterclass online de 2 horas por um investimento único de <strong>R$&nbsp;22,00</strong>.</p>
+        <a class="btn btn--lg" href="https://pay.hotmart.com/H107524355I?bid=1792577203766" target="_blank" rel="noopener sponsored" data-cta="final">Quero acessar a Masterclass por R$&nbsp;22</a>
+        <p class="final__note">Compra segura, processada pela Hotmart. Acesso conforme as condições da oferta.</p>
       </div>
     </section>
   </main>
@@ -272,10 +303,11 @@
         <p class="footer__brand">Masterclass: Do Comportamento à Aprendizagem</p>
         <p class="footer__small">Esta é uma página de divulgação. A venda, o pagamento e a entrega do produto são realizados pela plataforma Hotmart. Os resultados podem variar de pessoa para pessoa, pois dependem da aplicação do conteúdo em cada contexto. Este material tem finalidade educacional e não substitui avaliação ou acompanhamento profissional individual.</p>
       </div>
-      <nav class="footer__links" aria-label="Informações legais">
+      <nav class="footer__links" aria-label="Informações e contato">
         <a href="privacidade.html">Política de Privacidade</a>
         <a href="termos.html">Termos de Uso</a>
         <a href="mailto:psicoepedagoga@gmail.com">Contato</a>
+        <a href="https://www.instagram.com/tamarasangalo.psicologa/" target="_blank" rel="noopener noreferrer" data-ext="instagram">Instagram<span class="sr-only"> (abre em nova aba)</span></a>
       </nav>
     </div>
     <p class="footer__copy">&copy; <span id="ano">2026</span> Todos os direitos reservados. Hotmart é marca de seus respectivos proprietários.</p>
@@ -283,7 +315,7 @@
 
   <!-- Botão fixo no celular -->
   <div class="sticky" id="sticky" aria-hidden="true">
-    <a class="btn btn--block" href="https://pay.hotmart.com/H107524355I?bid=1792577203766" target="_blank" rel="noopener sponsored" tabindex="-1">Quero acessar · R$&nbsp;22,00</a>
+    <a class="btn btn--block" href="https://pay.hotmart.com/H107524355I?bid=1792577203766" target="_blank" rel="noopener sponsored" tabindex="-1" data-cta="sticky">Quero acessar · R$&nbsp;22,00</a>
   </div>
 </body>
 </html>

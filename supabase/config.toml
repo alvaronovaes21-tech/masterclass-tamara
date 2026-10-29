@@ -1,0 +1,8 @@
+# Configuração mínima para o Supabase CLI (veja docs/DEPOIMENTOS.md).
+# O project_id é só o nome local; o vínculo com o projeto real é feito por `supabase link`.
+project_id = "masterclass-tamara"
+
+# A função é pública (recebe depoimentos de visitantes sem login). A validação,
+# o limite de envios e as regras de acesso acontecem DENTRO da função.
+[functions.testimonials]
+verify_jwt = false

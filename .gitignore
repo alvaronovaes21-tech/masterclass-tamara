@@ -1,0 +1,7 @@
+node_modules/
+tests/.tmp/
+tests/screenshots/
+.env
+.env.*
+supabase/.temp/
+supabase/.branches/

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <!-- Painel restrito: sem rastreadores, sem indexação. Só o próprio site + Supabase. -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data: blob: https://*.supabase.co; font-src 'self'; connect-src 'self' https://*.supabase.co; base-uri 'none'; form-action 'none'; object-src 'none'; upgrade-insecure-requests">
+  <meta name="referrer" content="no-referrer">
+  <meta name="robots" content="noindex, nofollow, noarchive">
+  <title>Painel de depoimentos | Administração</title>
+  <meta name="theme-color" content="#0f1f3d">
+  <link rel="icon" type="image/svg+xml" href="../../assets/img/favicon.svg">
+  <link rel="stylesheet" href="../../assets/css/style.css">
+  <link rel="stylesheet" href="../../assets/css/app.css">
+  <script src="../../assets/js/site-config.js" defer></script>
+  <script src="../../assets/js/photo.js" defer></script>
+  <script src="../../assets/js/admin-depoimentos.js" defer></script>
+</head>
+<body class="app admin">
+  <header class="topbar">
+    <div class="wrap topbar__in">
+      <span class="brand"><span>Administração · Depoimentos</span></span>
+      <a class="topbar__back" href="../../">Ver o site &rarr;</a>
+    </div>
+  </header>
+
+  <main class="page">
+    <noscript><div class="wrap wrap--form"><div class="notice notice--warn">O painel precisa de JavaScript.</div></div></noscript>
+
+    <!-- Login -->
+    <section id="login-view" class="wrap wrap--form" hidden>
+      <div class="login">
+        <h1>Entrar</h1>
+        <div class="notice notice--warn" id="cfg-aviso" hidden>O site ainda não foi conectado ao Supabase. Preencha <code>assets/js/site-config.js</code> (veja docs/DEPOIMENTOS.md).</div>
+        <form id="login-form" novalidate>
+          <div class="field">
+            <label for="l-email">E-mail</label>
+            <input type="text" id="l-email" inputmode="email" autocomplete="username" autocapitalize="none" spellcheck="false" required>
+          </div>
+          <div class="field">
+            <label for="l-pass">Senha</label>
+            <input type="password" id="l-pass" autocomplete="current-password" required>
+          </div>
+          <p class="error" id="l-erro" role="alert" hidden></p>
+          <button type="submit" class="btn btn--block" id="l-btn">Entrar</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- Painel -->
+    <section id="panel-view" class="wrap wrap--admin" hidden>
+      <div class="adm-bar">
+        <h1>Depoimentos</h1>
+        <div class="adm-user">
+          <span id="user-email"></span>
+          <button type="button" class="btn btn--ghost btn--sm" id="btn-sair">Sair</button>
+        </div>
+      </div>
+
+      <div id="panel-msg" class="notice notice--error" role="alert" hidden></div>
+
+      <section class="adm-featured" aria-labelledby="feat-titulo">
+        <h2 id="feat-titulo">Destaques da página (até 5)</h2>
+        <p class="help">Estes são os depoimentos mostrados primeiro na landing page, na ordem abaixo. Só podem ser destacados depoimentos aprovados e publicados.</p>
+        <ol class="feat-list" id="feat-list"></ol>
+        <p class="help" id="feat-vazio" hidden>Nenhum destaque escolhido. Enquanto isso, a página mostra os publicados mais recentes. Abra um depoimento publicado e use “Destacar”.</p>
+      </section>
+
+      <div class="adm-filters" id="filtros" role="group" aria-label="Filtrar depoimentos"></div>
+
+      <div class="adm-layout" id="layout">
+        <div class="adm-listcol">
+          <div class="adm-list" id="lista" role="list" aria-live="polite"></div>
+        </div>
+        <section class="adm-editor" id="editor" aria-label="Detalhes do depoimento">
+          <button type="button" class="btn btn--ghost btn--sm adm-back" id="btn-voltar">&larr; Voltar à lista</button>
+          <div id="editor-corpo"><p class="adm-empty">Selecione um depoimento para visualizar e moderar.</p></div>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <div class="adm-toast" id="toast" role="status" aria-live="polite" hidden></div>
+</body>
+</html>

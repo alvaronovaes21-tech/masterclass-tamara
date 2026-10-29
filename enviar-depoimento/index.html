@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+
+  <!-- Página de coleta de dados pessoais: SEM Google Ads/Tag, sem rastreadores. Só o próprio site + Supabase (+ Turnstile, se ativado). -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://challenges.cloudflare.com; style-src 'self'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://*.supabase.co; frame-src https://challenges.cloudflare.com; base-uri 'none'; form-action 'none'; object-src 'none'; upgrade-insecure-requests">
+  <meta name="referrer" content="no-referrer">
+  <meta name="robots" content="noindex, nofollow">
+
+  <title>Enviar depoimento | Masterclass Do Comportamento à Aprendizagem</title>
+  <meta name="description" content="Participou da Masterclass Do Comportamento à Aprendizagem? Conte como foi a sua experiência.">
+  <meta name="theme-color" content="#0f1f3d">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="pt_BR">
+  <meta property="og:title" content="Conte como foi a sua experiência na Masterclass">
+  <meta property="og:description" content="Participou da Masterclass Do Comportamento à Aprendizagem? Compartilhe o seu depoimento.">
+
+  <link rel="icon" type="image/svg+xml" href="../assets/img/favicon.svg">
+  <link rel="stylesheet" href="../assets/css/style.css">
+  <link rel="stylesheet" href="../assets/css/app.css">
+  <script src="../assets/js/site-config.js" defer></script>
+  <script src="../assets/js/photo.js" defer></script>
+  <script src="../assets/js/enviar-depoimento.js" defer></script>
+</head>
+<body class="app">
+  <a class="skip" href="#form-titulo">Pular para o formulário</a>
+
+  <header class="topbar">
+    <div class="wrap topbar__in">
+      <a class="brand" href="../" aria-label="Voltar para a página da Masterclass">
+        <svg class="brand__logo" viewBox="0 0 32 32" width="32" height="32" aria-hidden="true">
+          <circle cx="16" cy="16" r="16" fill="#f7b32b"/>
+          <path d="M9 21c2-9 8-12 14-10-1 8-6 12-14 10Z" fill="#0f1f3d"/>
+          <path d="M9 23c3-5 6-8 11-11" stroke="#f7b32b" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+        </svg>
+        <span>Tâmara San'Galo</span>
+      </a>
+      <a class="topbar__back" href="../">&larr; Voltar ao site</a>
+    </div>
+  </header>
+
+  <main class="page">
+    <div class="wrap wrap--form">
+
+      <section id="intro" aria-labelledby="form-titulo">
+        <p class="eyebrow eyebrow--dark">Masterclass Do Comportamento à Aprendizagem</p>
+        <h1 id="form-titulo" tabindex="-1">Conte como foi a sua experiência</h1>
+        <p class="lead-dark">Você participou da Masterclass Do Comportamento à Aprendizagem? Conte como foi sua experiência! Seu relato pode ajudar outros profissionais e estudantes a conhecerem a proposta do curso.</p>
+
+        <div class="notice notice--info" role="note">
+          <strong>Antes de enviar:</strong> o envio não garante a publicação. Todo depoimento passa por análise da administração e <strong>só é publicado se for aprovado</strong>. Enviar é opcional e você escolhe como quer ser identificado(a).
+        </div>
+
+        <div class="notice notice--warn" id="aviso-config" role="alert" hidden>
+          O envio de depoimentos ainda não está disponível neste momento. Por favor, tente novamente mais tarde.
+        </div>
+
+        <noscript><div class="notice notice--warn">Este formulário precisa de JavaScript para funcionar. Ative-o no navegador e recarregue a página.</div></noscript>
+      </section>
+
+      <div class="notice notice--error" id="resumo-erros" role="alert" tabindex="-1" hidden>
+        <strong>Revise os campos abaixo:</strong>
+        <ul id="resumo-lista"></ul>
+      </div>
+
+      <form id="form" data-consent-version="v1-2026-10" novalidate autocomplete="on">
+
+        <fieldset class="group">
+          <legend>1. Sobre você</legend>
+
+          <div class="field">
+            <label for="f-author_name">Seu nome <span class="req" aria-hidden="true">*</span><span class="sr-only">(obrigatório)</span></label>
+            <input type="text" id="f-author_name" name="author_name" autocomplete="name" autocapitalize="words" maxlength="120" required aria-describedby="h-author_name e-author_name">
+            <p class="help" id="h-author_name">Seu nome completo só será exibido se você escolher essa opção abaixo.</p>
+            <p class="error" id="e-author_name" hidden></p>
+          </div>
+
+          <fieldset class="field field--radios" aria-describedby="e-display_choice">
+            <legend>Como deseja ser identificado(a) publicamente? <span class="req" aria-hidden="true">*</span><span class="sr-only">(obrigatório)</span></legend>
+            <label class="choice"><input type="radio" name="display_choice" value="full" required><span>Nome completo</span></label>
+            <label class="choice"><input type="radio" name="display_choice" value="first"><span>Primeiro nome</span></label>
+            <label class="choice"><input type="radio" name="display_choice" value="first_initial"><span>Nome e inicial do sobrenome</span></label>
+            <label class="choice"><input type="radio" name="display_choice" value="custom"><span>Outra forma (por exemplo, apelido ou iniciais)</span></label>
+            <div class="field field--nested" id="custom-wrap" hidden>
+              <label for="f-custom_name">Como quer aparecer?</label>
+              <input type="text" id="f-custom_name" name="custom_name" maxlength="60" autocomplete="off" aria-describedby="e-custom_name">
+              <p class="error" id="e-custom_name" hidden></p>
+            </div>
+            <p class="preview" id="preview-nome" aria-live="polite" hidden></p>
+            <p class="error" id="e-display_choice" hidden></p>
+          </fieldset>
+
+          <div class="field">
+            <label for="f-profession">Profissão ou área de atuação <span class="opt">(opcional)</span></label>
+            <input type="text" id="f-profession" name="profession" autocomplete="organization-title" maxlength="80" placeholder="Ex.: Psicopedagoga, Professora, Estudante de Psicologia" aria-describedby="e-profession">
+            <p class="error" id="e-profession" hidden></p>
+          </div>
+
+          <div class="field">
+            <label for="f-cohort">Turma ou modalidade cursada <span class="opt">(opcional)</span></label>
+            <input type="text" id="f-cohort" name="cohort" maxlength="80" autocomplete="off" aria-describedby="e-cohort">
+            <p class="error" id="e-cohort" hidden></p>
+          </div>
+
+          <div class="field">
+            <label for="f-contact">E-mail ou WhatsApp <span class="opt">(opcional)</span></label>
+            <input type="text" id="f-contact" name="contact" autocomplete="email" inputmode="email" autocapitalize="none" maxlength="160" aria-describedby="h-contact e-contact">
+            <p class="help" id="h-contact">Não será exibido no site. Só usaremos se precisarmos confirmar algo sobre o seu depoimento.</p>
+            <p class="error" id="e-contact" hidden></p>
+          </div>
+        </fieldset>
+
+        <fieldset class="group">
+          <legend>2. Seu depoimento</legend>
+          <div class="field">
+            <label for="f-body">Como foi a sua experiência? <span class="req" aria-hidden="true">*</span><span class="sr-only">(obrigatório)</span></label>
+            <textarea id="f-body" name="body" rows="7" maxlength="1000" required aria-describedby="h-body e-body" placeholder="Conte o que você achou do conteúdo, o que aprendeu e como pretende aplicar."></textarea>
+            <div class="counter-row">
+              <p class="help" id="h-body">Mínimo de 30 caracteres. Não inclua links nem dados de terceiros (como nomes de crianças).</p>
+              <p class="counter" id="contador" aria-live="off"><span id="contador-n">0</span>/1000</p>
+            </div>
+            <p class="error" id="e-body" hidden></p>
+          </div>
+        </fieldset>
+
+        <fieldset class="group">
+          <legend>3. Foto <span class="opt">(opcional)</span></legend>
+          <p class="help help--lead">Você pode enviar uma foto para aparecer junto ao depoimento, mas isso não é obrigatório. A foto só será exibida se você autorizar abaixo e se o depoimento for aprovado.</p>
+
+          <div class="photo" id="photo-box">
+            <div class="photo__empty" id="photo-empty">
+              <button type="button" class="btn btn--ghost" id="btn-galeria">Escolher da galeria</button>
+              <button type="button" class="btn btn--ghost" id="btn-camera">Tirar uma foto</button>
+            </div>
+            <div class="photo__preview" id="photo-preview" hidden>
+              <img id="photo-img" alt="Pré-visualização da foto selecionada" width="120" height="120">
+              <div class="photo__actions">
+                <p class="help" id="photo-info"></p>
+                <button type="button" class="btn btn--ghost btn--sm" id="btn-trocar">Trocar foto</button>
+                <button type="button" class="btn btn--ghost btn--sm" id="btn-remover">Remover foto</button>
+              </div>
+            </div>
+            <p class="help" id="photo-help">Formatos aceitos: JPEG, PNG ou WebP, de até 10 MB. A foto é reduzida automaticamente antes do envio e os dados de localização do arquivo são descartados.</p>
+            <p class="error" id="e-photo" hidden></p>
+            <input class="sr-only" type="file" id="in-galeria" accept="image/jpeg,image/png,image/webp" tabindex="-1" aria-hidden="true">
+            <input class="sr-only" type="file" id="in-camera" accept="image/*" capture="user" tabindex="-1" aria-hidden="true">
+          </div>
+
+          <div class="field field--check" id="photo-consent-wrap" hidden>
+            <label class="check-row" for="f-photo_consent">
+              <input type="checkbox" id="f-photo_consent" name="photo_consent" aria-describedby="e-photo_consent">
+              <span>Autorizo o uso público da minha foto, enviada acima, junto ao meu depoimento neste site, caso ele seja aprovado e publicado. Esta autorização é separada da autorização do texto e pode ser retirada a qualquer momento pelo e-mail psicoepedagoga@gmail.com.</span>
+            </label>
+            <p class="error" id="e-photo_consent" hidden></p>
+          </div>
+        </fieldset>
+
+        <fieldset class="group">
+          <legend>4. Confirmações</legend>
+
+          <div class="field field--check">
+            <label class="check-row" for="f-consent_own">
+              <input type="checkbox" id="f-consent_own" name="consent_own" required aria-describedby="e-consent_own">
+              <span>Declaro que este depoimento descreve a minha própria experiência como participante da Masterclass “Do Comportamento à Aprendizagem”.</span>
+            </label>
+            <p class="error" id="e-consent_own" hidden></p>
+          </div>
+
+          <div class="field field--check">
+            <label class="check-row" for="f-consent_publication">
+              <input type="checkbox" id="f-consent_publication" name="consent_publication" required aria-describedby="e-consent_publication">
+              <span>Autorizo que o meu depoimento seja analisado pela administração e, se aprovado, publicado neste site com a identificação pública que escolhi acima (nome, profissão ou área e turma, quando informados). Entendo que a publicação é opcional, que o envio não garante a publicação, que o texto poderá receber correções ortográficas e de digitação e que posso pedir a retirada a qualquer momento pelo e-mail psicoepedagoga@gmail.com.</span>
+            </label>
+            <p class="error" id="e-consent_publication" hidden></p>
+          </div>
+
+          <p class="help">Seus dados serão usados apenas para analisar e, se aprovado, publicar o seu depoimento. Saiba mais na <a href="../privacidade.html" target="_blank" rel="noopener">Política de Privacidade<span class="sr-only"> (abre em nova aba)</span></a>.</p>
+        </fieldset>
+
+        <!-- Campo-isca contra robôs: pessoas não veem nem preenchem -->
+        <div class="hp" aria-hidden="true">
+          <label for="f-website">Não preencha este campo</label>
+          <input type="text" id="f-website" name="website" tabindex="-1" autocomplete="off">
+        </div>
+
+        <div id="turnstile-box" hidden></div>
+        <p class="error" id="e-captcha" hidden></p>
+
+        <div class="submit-row">
+          <button type="submit" class="btn btn--lg btn--block" id="btn-enviar">Enviar meu depoimento</button>
+          <p class="status" id="status" role="status" aria-live="polite"></p>
+        </div>
+      </form>
+
+      <section id="sucesso" class="success" tabindex="-1" hidden aria-live="polite">
+        <div class="success__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="40" height="40"><path d="m5 12.5 4.5 4.5L19 7.500" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <h2>Obrigado por compartilhar sua experiência!</h2>
+        <p>Seu depoimento foi recebido e será analisado antes de qualquer publicação.</p>
+        <p><a class="btn" href="../">Voltar para a página da Masterclass</a></p>
+      </section>
+    </div>
+  </main>
+</body>
+</html>
