@@ -81,20 +81,28 @@ test('1. Landing (desktop): primeira tela em 2 colunas, textos, vídeo e botões
   // nenhum outro link de pagamento inventado
   assert.equal(await page.$$eval('a[href*="pay."], a[href*="checkout"]', (as) => as.filter((a) => !a.href.startsWith('https://pay.hotmart.com/H107524355I')).length), 0);
 
-  // clique em um botão: abre o checkout em nova aba + evento SEPARADO e SEM dados pessoais (não é compra)
+  // clique em um botão: abre o checkout em nova aba + evento interno, sem dados pessoais.
+  // A conversão de clique (rótulo 0Foa…) é permitida. A de compra (rótulo d1sS…) não pode sair deste clique.
+  const CLICK_SEND_TO = 'AW-18537932244/0FoaCOflyK4dENTLyYdF';
+  const PURCHASE_SEND_TO = 'AW-18537932244/d1sSCI2smaodENTLyYdF';
   const [popup] = await Promise.all([page.waitForEvent('popup'), page.locator('.hero__cta .btn').click()]);
   assert.equal(popup.url(), HOTMART);
   const dl = await page.evaluate(() => window.dataLayer.map((x) => Array.from(x)));
   const ev = dl.find((x) => x[0] === 'event' && x[1] === 'clique_checkout_hotmart');
   assert.ok(ev, 'evento clique_checkout_hotmart');
   assert.deepEqual(ev[2], { cta_local: 'hero' });
-  assert.ok(!dl.some((x) => x[0] === 'event' && /purchase|compra|conversion/i.test(String(x[1]))), 'clique NÃO pode virar compra/conversão');
+  const conversions = dl.filter((x) => x[0] === 'event' && x[1] === 'conversion');
+  assert.equal(conversions.length, 1, 'uma conversão de clique por clique no checkout');
+  assert.equal(conversions[0][2] && conversions[0][2].send_to, CLICK_SEND_TO);
+  const sendToOf = (x) => String((x[2] && x[2].send_to) || '');
+  assert.ok(!dl.some((x) => x[0] === 'event' && sendToOf(x) === PURCHASE_SEND_TO), 'clique não pode usar o rótulo de compra');
+  assert.ok(!dl.some((x) => x[0] === 'event' && /purchase|compra/i.test(String(x[1]))), 'clique não pode virar evento de compra');
   await popup.close();
 
   // tags de rastreamento não duplicadas; só a tag atual da conta
   assert.equal(await page.locator('script[src*="googletagmanager"]').count(), 1);
   assert.equal(await page.locator('script[src*="gtag-init"]').count(), 1);
-  assert.match(await page.locator('script[src*="googletagmanager/gtag/js"]').getAttribute('src'), /[?&]id=AW-18537932244(?:&|$)/);
+  assert.match(await page.locator('script[src*="googletagmanager.com/gtag/js"]').getAttribute('src'), /[?&]id=AW-18537932244(?:&|$)/);
   const cfg = dl.find((x) => x[0] === 'config');
   assert.ok(cfg, 'gtag config');
   assert.equal(cfg[1], 'AW-18537932244');
