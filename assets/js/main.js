@@ -73,14 +73,78 @@
   }
 
   // ---------- Medição: cliques nos botões que levam ao checkout da Hotmart ----------
-  // Evento separado e SEM dados pessoais. Isto NÃO é uma compra: a compra efetiva continua
-  // sendo medida pela integração já existente (Hotmart/Google), não por este clique.
+  // Dois eventos no mesmo clique, ambos SEM dados pessoais e SEM valor de compra:
+  // 1) clique_checkout_hotmart — evento interno já existente (local do CTA).
+  // 2) conversion do Google Ads — intenção de abrir o checkout (NÃO é compra).
+  // A compra efetiva continua sendo medida só pela integração Hotmart já configurada.
+  // A tag global AW-18537932244 já está em gtag-init.js; daqui só disparamos o evento.
+  var ADS_CLICK_SEND_TO = 'AW-18537932244/0FoaCOflyK4dENTLyYdF';
+  var ADS_CLICK_TIMEOUT_MS = 2000;
+
   document.addEventListener('click', function (ev) {
     var a = ev.target && ev.target.closest ? ev.target.closest('a[data-cta]') : null;
-    if (!a || typeof window.gtag !== 'function') return;
+    if (!a) return;
+
+    var url = a.href || '';
+    var opensNewTab = String(a.getAttribute('target') || '').toLowerCase() === '_blank';
+    var conversionSent = false;
+    var leftPage = false;
+
+    function sendAdsClickConversion(onDone) {
+      var finished = false;
+      function done() {
+        if (finished) return;
+        finished = true;
+        if (typeof onDone === 'function') onDone();
+      }
+
+      if (conversionSent) {
+        done();
+        return;
+      }
+      conversionSent = true;
+
+      if (typeof window.gtag !== 'function') {
+        done();
+        return;
+      }
+
+      try {
+        window.gtag('event', 'conversion', {
+          send_to: ADS_CLICK_SEND_TO,
+          event_callback: done,
+          event_timeout: ADS_CLICK_TIMEOUT_MS
+        });
+      } catch (e) {
+        done();
+        return;
+      }
+
+      // Se a tag não responder (bloqueada, lenta, etc.), não prende o usuário.
+      window.setTimeout(done, ADS_CLICK_TIMEOUT_MS);
+    }
+
     try {
-      window.gtag('event', 'clique_checkout_hotmart', { cta_local: a.getAttribute('data-cta') || 'desconhecido' });
+      if (typeof window.gtag === 'function') {
+        window.gtag('event', 'clique_checkout_hotmart', { cta_local: a.getAttribute('data-cta') || 'desconhecido' });
+      }
     } catch (e) { /* medição nunca pode atrapalhar a navegação */ }
+
+    // Nova aba: o navegador segue o link no gesto do clique. Só medimos em paralelo.
+    // Sem preventDefault — senão o checkout pode ser bloqueado como pop-up.
+    if (opensNewTab) {
+      sendAdsClickConversion(null);
+      return;
+    }
+
+    // Mesma aba (defesa, caso algum CTA perca o target=_blank): espera a tag com teto de 2s.
+    if (!url) return;
+    ev.preventDefault();
+    sendAdsClickConversion(function () {
+      if (leftPage) return;
+      leftPage = true;
+      window.location.href = url;
+    });
   });
 
   // ---------- Animações de entrada ----------
